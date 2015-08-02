@@ -57,6 +57,7 @@ workServer(std::string m_ip, int m_port):
     Register(listen_fd, false);
 }
 
+/* destroy function  close socket fd*/
 workServer::
 ~workServer()
 {
@@ -64,6 +65,8 @@ workServer::
     close(epoll_fd);
 }
 
+
+/* set socket fd nonblocking */
 int
 workServer::
 setnonblocking(int fd)
@@ -74,6 +77,8 @@ setnonblocking(int fd)
     return old_option;
 }
 
+
+/* register sockfd in epoll */
 int 
 workServer::
 Register(int fd, bool oneshot)
@@ -90,6 +95,7 @@ Register(int fd, bool oneshot)
     return 0;
 }
 
+/* epoll run */
 int 
 workServer::
 Run()
