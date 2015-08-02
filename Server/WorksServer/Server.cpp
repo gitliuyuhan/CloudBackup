@@ -1,0 +1,125 @@
+/*
+ * =====================================================================================
+ *
+ *       Filename:  Server.cpp
+ *
+ *    Description:  
+ *
+ *        Version:  1.0
+ *        Created:  2015年08月02日 19时55分10秒
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:   (wangweihao), 578867817@qq.com
+ *        Company:  xiyoulinuxgroup
+ *
+ * =====================================================================================
+ */
+
+#include <Server.h>
+
+void func()
+{
+    std::cout << "我是线程，我要执行任务啦" << std::endl;
+}
+
+workServer::
+workServer(std::string m_ip, int m_port):
+    ip(m_ip), port(m_port)
+{
+    /* 初始化服务端socket配置 */
+    bzero(&server, sizeof(server));
+    server.sin_family = AF_INET;
+    server.sin_port = htons(port);
+    inet_pton(AF_INET, ip.c_str(), &server.sin_addr);
+    /*创建普通socket */
+    listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if(listen_fd < 0)
+    {
+        perror("create socket error\n");
+        exit(1);
+    }
+    /* 绑定端口 */
+    int ret = bind(listen_fd, (struct sockaddr*)&server, sizeof(server));
+    if(ret == -1)
+    {
+        perror("bind socket error\n");
+        exit(1);
+    }
+    /* 转换为监听socket，将backlog设置为1024 */
+    ret = listen(listen_fd, 1024);
+    if(ret == -1)
+    {
+        perror("listen error\n");
+        exit(1);
+    }
+    epoll_fd = epoll_create(maxCon);
+    Register(listen_fd, false);
+}
+
+workServer::
+~workServer()
+{
+    close(listen_fd);
+    close(epoll_fd);
+}
+
+int
+workServer::
+setnonblocking(int fd)
+{
+    int old_option = fcntl(fd, F_GETFL);
+    int new_option = old_option | O_NONBLOCK;
+    int ret = fcntl(fd, F_SETFL, new_option);
+    return old_option;
+}
+
+int 
+workServer::
+Register(int fd, bool oneshot)
+{
+    epoll_event event;
+    event.data.fd = fd;
+    event.events = EPOLLIN | EPOLLET;
+    if(oneshot)
+    {
+        event.events |= EPOLLONESHOT;
+    }
+    epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &event);
+    setnonblocking(fd);
+    return 0;
+}
+
+int 
+workServer::
+Run()
+{
+    while(1)
+    {
+        int ret = epoll_wait(epoll_fd, events, maxCon, -1);
+        if(ret < 0)
+        {
+            perror("epoll_wait error\n");
+            exit(1);
+        }
+        for(int i = 0; i < ret; i++)
+        {
+            int sockfd = events[i].data.fd;
+            if(sockfd == listen_fd)
+            {
+                struct sockaddr_in client_address;
+                socklen_t len = sizeof(client_address);
+                int connfd = accept(listen_fd, (struct sockaddr*)&client_address, &len);
+                Register(connfd, true);
+                std::cout << "接受连接并注册" << std::endl;   
+            }
+            else if(events[i].events & EPOLLIN)
+            {
+                std::cout << "读事件产生" << std::endl;
+                std::thread tid(func);
+                tid.join();
+            }
+        }
+    }
+}
+
