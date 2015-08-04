@@ -18,14 +18,15 @@
 
 #include <Server.h>
 
-void func()
+bool func(int fd, std::string json)
 {
-    std::cout << "我是线程，我要执行任务啦" << std::endl;
+    std::cout << "文件描述符为:" << fd << " Json:" << json << std::endl;
+    return true;
 }
 
 workServer::
 workServer(std::string m_ip, int m_port):
-    ip(m_ip), port(m_port), pool(10)
+    ip(m_ip), port(m_port), threadpool(10)
 {
     /* 初始化服务端socket配置 */
     bzero(&server, sizeof(server));
@@ -118,15 +119,37 @@ Run()
                 int connfd = accept(listen_fd, (struct sockaddr*)&client_address, &len);
                 Register(connfd, true);
                 std::cout << "接受连接并注册" << std::endl;
-                std::cout << "添加到任务队列中,等待线程处理" << std::endl;
             }
             else if(events[i].events & EPOLLIN)
             {
-                std::cout << "读事件产生" << std::endl;
-                std::thread tid(func);
-                tid.join();
+                //std::cout << "读事件产生" << std::endl;
+                //std::cout << "添加到任务队列中,等待线程处理" << std::endl;
+                //std::thread tid(func);
+                //tid.join();
+                /* receive handler pass on threadpool */ 
+                //Handler hand = std::make_tuple(&workServer::handler_upload, 10, "hello world");
+                Handler hand = std::make_tuple(workServer::handler_upload, 10, "hello world");
+                threadpool.AddTask(std::move(hand));
             }
         }
     }
+}
+
+/* upload file */
+bool
+workServer::
+handler_upload(int fd, std::string json)
+{
+    std::cout << "updaload:" << fd << " MD%:" << json << std::endl;
+}
+
+
+/* download file */
+bool
+workServer::
+handler_download(int fd, std::string json)
+{
+    std::cout << "download:" << fd << " MD%:" << json << std::endl;
+
 }
 
