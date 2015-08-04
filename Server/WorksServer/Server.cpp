@@ -17,6 +17,8 @@
  */
 
 #include <Server.h>
+#include <sys/sendfile.h>
+#include <sys/stat.h>
 
 bool func(int fd, std::string json)
 {
@@ -124,32 +126,114 @@ Run()
             {
                 //std::cout << "读事件产生" << std::endl;
                 //std::cout << "添加到任务队列中,等待线程处理" << std::endl;
-                //std::thread tid(func);
-                //tid.join();
                 /* receive handler pass on threadpool */ 
                 //Handler hand = std::make_tuple(&workServer::handler_upload, 10, "hello world");
-                Handler hand = std::make_tuple(workServer::handler_upload, 10, "hello world");
+                char buffer[1024];
+                recv(sockfd, buffer, 1024, 0);
+                std::string s(buffer);
+                printf("%s\n", buffer);
+                /* download */
+                //Handler hand = std::make_tuple(workServer::handler_download, sockfd, s);
+                //threadpool.AddTask(std::move(hand));
+                /* upload */
+                Handler hand = std::make_tuple(workServer::handler_upload, sockfd, s);
                 threadpool.AddTask(std::move(hand));
+
             }
         }
     }
 }
-
-/* upload file */
-bool
-workServer::
-handler_upload(int fd, std::string json)
-{
-    std::cout << "updaload:" << fd << " MD%:" << json << std::endl;
-}
-
 
 /* download file */
 bool
 workServer::
 handler_download(int fd, std::string json)
 {
-    std::cout << "download:" << fd << " MD%:" << json << std::endl;
+    std::cout << "downdaload:" << fd << " MD:" << json << std::endl;
+    std::string filename(json);
+    /* sendfile transport file */
+    
+    std::cout << json << std::endl;
+    int r_fd = open(filename.c_str(), O_RDONLY);
+    if(r_fd == -1)
+    {
+        perror("open file error\n");
+        exit(1);
+    }
+    struct stat st;
+    
+    std::cout << "stat" << std::endl;
+    long int size = stat(filename.c_str(), &st);
+    if(size < 0)
+    {
+        perror("gain file stat error\n");
+        exit(1);
+    }
+    
+    std::cout << "lseek" << std::endl;
+    off_t pos = lseek(r_fd, 0, SEEK_SET);
+    if(pos < 0)
+    {
+        perror("obtain file pointer error\n");
+        exit(1);
+    }
+    
+    std::cout << "sendfile" << std::endl;
+    //int n = sendfile(fd, r_fd, &pos, st.st_size);
+    int n;
+    long int s = 0;
+    while(n = sendfile(fd, r_fd, &pos, st.st_size))
+    {
+        s += n;
+    }
+    if(n == -1)
+    {
+        perror("send file error\n");
+        exit(1);
+    }
+    
+    std::cout << s << " "<< st.st_size <<  std::endl;
+    if(n >= st.st_size)
+    {
+        std::cout << "send file success " << json << std::endl;
+    }
+}
 
+
+/* upload file */
+bool
+workServer::
+handler_upload(int fd, std::string json)
+{
+    std::cout << "upload:" << fd << " MD:" << json << std::endl;
+    std::string s("../");
+    std::string filename(json);
+    /* open file */
+    int w_fd = open(filename.c_str(), O_WRONLY | O_CREAT, 00700);
+    if(w_fd == -1)
+    {
+        perror("open file error\n");
+        exit(1);
+    }
+    char buffer[20480];
+    while(1)
+    {
+        bzero(buffer, 20480);
+        int n = recv(fd, buffer, 20480, 0);
+        if(n < 0)
+        {
+            perror("recv error\n");
+            exit(1);
+        }else if(n == 0)
+        {
+            break;
+        }
+        ssize_t s_t = write(w_fd, buffer, n);
+        if(s_t < 0)
+        {
+            perror("write error\n");
+            exit(1);
+        }
+    }
 }
 
