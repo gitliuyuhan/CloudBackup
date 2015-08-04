@@ -25,7 +25,7 @@ void func()
 
 workServer::
 workServer(std::string m_ip, int m_port):
-    ip(m_ip), port(m_port)
+    ip(m_ip), port(m_port), pool(10)
 {
     /* 初始化服务端socket配置 */
     bzero(&server, sizeof(server));
@@ -117,7 +117,8 @@ Run()
                 socklen_t len = sizeof(client_address);
                 int connfd = accept(listen_fd, (struct sockaddr*)&client_address, &len);
                 Register(connfd, true);
-                std::cout << "接受连接并注册" << std::endl;   
+                std::cout << "接受连接并注册" << std::endl;
+                std::cout << "添加到任务队列中,等待线程处理" << std::endl;
             }
             else if(events[i].events & EPOLLIN)
             {

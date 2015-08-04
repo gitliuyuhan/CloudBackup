@@ -36,6 +36,9 @@
 #include <string.h>
 #include <fcntl.h>
 
+/* 线程池 */
+#include "ThreadPool.h"
+
 enum { maxCon = 10000};
 
 class workServer
@@ -72,7 +75,7 @@ class workServer
 
         
         /* 线程池 */
-        //ptrhead_pool
+        ThreadPool pool;
 
         /* 服务端对于负载均衡服务器充当Clinet */
         //Client
