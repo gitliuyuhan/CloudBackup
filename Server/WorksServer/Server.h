@@ -51,12 +51,17 @@ class workServer
     
         /* server运行函数 */
         int Run();
-
+    
+        /* 上传and下载 */
+        static bool handler_upload(int fd, std::string json);
+        static bool handler_download(int fd, std::string json); 
+    
     private:
         /* register登记连接的socket */
         int Register(int fd, bool oneshot);
         /*  set nonblocking  */
         int setnonblocking(int fd);
+
 
 
     private:
@@ -75,10 +80,12 @@ class workServer
 
         
         /* 线程池 */
-        ThreadPool pool;
+        ThreadPool threadpool;
 
         /* 服务端对于负载均衡服务器充当Clinet */
         //Client
+        
+    
 };
 
 #endif
