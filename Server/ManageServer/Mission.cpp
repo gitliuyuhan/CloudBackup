@@ -164,78 +164,16 @@ class Mission{
 
             switch (status):
             case 1:AccountPasswd(root , socketfd);break;
-            case 2://注册  先判断数据库有没有该用户
-                ;break;
-            case 3://进入目录  返回该目录下的文件
-                ;break;
-            case 4://新建目录  返回空目录
-                ;break;
-            case 5://重命名文件或目录   修改数据库
-                ;break;
-            case 6://删除目录或者文件  修改数据库
-                ;break;
-            case 7://上传文件  找到空闲服务器  给客户端返回子服务器Ip及端口
-                ;break;
-            case 8://下载文件  找到文件的服务器地址  给客户端返回文件路径
-                ;break;
-            case 9://监控文件  将客户端指定的信息写入数据库
-                ;break;
-            case 10://恢复文件 返回文件所有数据
-                ;break;
-a        }
-
-
-        void RecvFromClient(const int & socketfd) {
-            char buf[TCP_BUFFER_SIZE];
-            while(1) {
-                memset( buf , '\0' , TCP_BUFFER_SIZE );
-                int ret = recv( socketfd , buf , TCP_BUFFER_SIZE - 1 , 0);
-                if( 0 > ret )  {
-                    if((errno == EAGAIN ) || (errno == EWOULDBLOCK )) {
-                        break;
-                    }
-                    close(socketfd);
-                    break;
-                }
-                else if( 0 == ret ) {
-                    close( socketfd );
-                }
-                else{
-                    //判断用户的行为
-                    UserRequest(buf,socketfd);
-                }
-            }
+            case 2:Register(root , socketfd);break;
+            case 3:DirFiles(root , socketfd);break;
+            case 4:CreateNewDir(root , socketfd);break;
+            case 5:RenameFileName(root , socketfd);break;
+            case 6:DeleteFileORDir(root , socketfd);break;
+            case 7:UploadFile(root , socketfd);break;
+            case 8:DownloadFile(root, socketfd);break;
+            case 9:MonitorFile(root , socketfd);break;
+            case 10:RestoreFile(root , socketfd);break;
         }
-
-        void EpollMission( char * ip , char * port )  {
-            int num;
-            int socketfds[MaxClientConnection];
-            e.CreateTcpSocket();
-            e.RegisterSocket();
-            while(1) {
-                num = e.SetEpollWait();
-                for(int i = 0 ; i < num ; ++i )  {
-                    int socketfd = e.events[i].data.fd;
-                    if( socketfd == e.socketfd) {
-                        struct sockaddr_in client_address;
-                        socklen_t client_addrlength = sizeof( client_address );
-                        int connfd = accept( e.socketfd , (struct sockaddr *)&client_address , &client_addrlength);
-                        if( connfd >= 0 )  {
-                            std::cout << "Already connect!" << std::endl; //system log
-                        }
-                        e.addfd(e.epollfd , connfd);
-                    }
-                    else if( e.events[i].events & EPOLLIN )  {
-                        RecvFromClient(socketfd);
-                    }
-
-                }
-
-            }
-            close(e.socketfd);
-        }
-
     private:
-        Epoll e;
         MyDataBase db[MaxClientConnection];
 };
