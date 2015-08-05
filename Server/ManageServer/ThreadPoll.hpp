@@ -126,9 +126,10 @@ class SyncQueue{
         bool m_stop;
 };
 
+template<typename T>
 class ThreadPool{
     public:
-        using Task = std::function<void()>;
+//        using Task = std::function<void()>;
         ThreadPool(int numThreads = std::thread::hardware_concurrency()):m_queue(MaxTaskCount)  {
             Start(numThreads);
         }
@@ -138,7 +139,7 @@ class ThreadPool{
         }
 
 
-        void AddTask(const Task & t) {
+        void AddTask(T & t) {
             m_queue.Put(t);
         }
 
@@ -151,13 +152,13 @@ class ThreadPool{
 
         void RunInThread() {
             while(m_running)  {
-                std::list<Task> list;
+                std::list<T> list;
                 m_queue.Take(list);
-                for( auto & Task : list )  {
+                for( auto & k : list )  {
                     if(!m_running)  {
                         return;
                     }
-                    Task();
+                    k->UserRequest();
                 }
             }
         }
