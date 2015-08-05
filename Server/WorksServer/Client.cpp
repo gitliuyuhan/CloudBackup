@@ -17,11 +17,15 @@
  */
 
 #include "Client.h"
-#include <string.h>
+#include <string>
+#include <cstring>
+#include <fstream>
+#include <iostream>
 
 /* 初始化监控本地负载的client */
 
 static int loadServer_fd;
+std::ifstream in("loadInfo.txt");
 
 /* 定时器处理定时事件，发送给负载server自己的负载信息 */
 void 
@@ -33,8 +37,19 @@ signalHandler(int sig)
         case SIGALRM:
             printf("caught the SIGALRM signal\n");
             printf("get local load info\n");
+           
+            /* 获得带宽信息 */
+            /* 后期可以加上cpu和磁盘io的信息 */
+            std::cout << "execute command" << std::endl;
+            std::string info;
+            getline(in, info);
+            info += "\n\0";
+            const char *p = info.c_str();
+            printf("p = %s\n", p);
+            std::cout << "load:" << info << std::endl;
+
             /* send loadserver */
-            send(loadServer_fd, buffer, 1024, 0);
+            send(loadServer_fd, p, strlen(p), 0);
             break;
     }
 }
@@ -67,9 +82,10 @@ ServerClient(std::string i, int p):
             signal(SIGALRM, signalHandler);
             new_value.it_value.tv_sec = 0;
             new_value.it_value.tv_usec = 1;
-            new_value.it_interval.tv_sec = 10;
+            new_value.it_interval.tv_sec = 5;
             new_value.it_interval.tv_usec = 0;
             setitimer(ITIMER_REAL, &new_value, &old_value);
+            /* 获得带宽信息 */
             while(1);
         }
     );
