@@ -1,0 +1,19 @@
+<RCC>
+   <qresource prefix="/">
+       <file>image/newfolder.png</file>
+       <file>image/upload.png</file>
+       <file>image/download.png</file>
+       <file>image/delete.png</file>
+       <file>image/rename.png</file>
+       <file>image/file.png</file>
+       <file>image/monitor.png</file>
+       <file>image/remove.png</file>
+       <file>image/start.png</file>
+       <file>image/stop.png</file>
+       <file>image/message.png</file>
+       <file>image/hide.png</file>
+       <file>image/set.png</file>
+       <file>image/1.jpg</file>
+       <file>image/2.png</file>
+   </qresource>
+</RCC>
