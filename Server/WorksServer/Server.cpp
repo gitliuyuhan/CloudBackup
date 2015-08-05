@@ -26,8 +26,8 @@
 
 /* constructor */
 workServer::
-workServer(std::string m_ip, int m_port):
-    ip(m_ip), port(m_port), threadpool(10)
+workServer(std::string m_ip, int m_port, std::string l_ip, int l_port):
+    ip(m_ip), port(m_port), threadpool(10), loadClient(l_ip, l_port)
 {
     /* 初始化服务端socket配置 */
     bzero(&server, sizeof(server));
@@ -163,6 +163,10 @@ Run()
         int ret = epoll_wait(epoll_fd, events, maxCon, -1);
         if(ret < 0)
         {
+            if(errno == EINTR)
+            {
+                continue;
+            }
             perror("epoll_wait error\n");
             exit(1);
         }
@@ -184,8 +188,9 @@ Run()
                 /* receive handler pass on threadpool */ 
                 char buffer[1024];
                 recv(sockfd, buffer, 1024, 0);
+                printf("%s\n", buffer);
                 std::string jjson(buffer);
-                std::cout << jjson << std::endl;
+                std::cout << "jjson:" << jjson << std::endl;
                 if(reader.parse(jjson, value))
                 {
                     if(!value["mark"].isNull())
@@ -278,8 +283,8 @@ workServer::
 handler_upload(int fd, std::string json)
 {
     std::cout << "upload:" << fd << " MD:" << json << std::endl;
-    std::string s("../");
     std::string filename(json);
+    
     /* open file */
     int w_fd = open(filename.c_str(), O_WRONLY | O_CREAT, 00700);
     if(w_fd == -1)
@@ -287,41 +292,30 @@ handler_upload(int fd, std::string json)
         perror("open file error\n");
         exit(1);
     }
-    char buffer[20480];
-    //while(1)
-    //{
-    //    bzero(buffer, 20480);
-    //    int n = recv(fd, buffer, 20480, 0);
-    //    if(n < 0)
-    //    {
-    //        perror("recv error\n");
-    //        exit(1);
-    //    }else if(n == 0)
-    //    {
-    //        break;
-    //    }
-    //    ssize_t s_t = write(w_fd, buffer, n);
-    //    if(s_t < 0)
-    //    {
-    //        perror("write error\n");
-    //        exit(1);
-    //    }
-    //}
+
+    /* use splice zero copy transform */
     int pipefd[2];
     int ret = pipe(pipefd);
-    ret = splice(fd, NULL, pipefd[1], NULL, 32768,
-            SPLICE_F_MORE | SPLICE_F_MOVE);
-    if(ret == -1)
+    while(1)
     {
-        perror("splice error\n");
-        exit(1);
-    }
-    ret = splice(pipefd[0], NULL, w_fd, NULL, 32768,
-            SPLICE_F_MORE | SPLICE_F_MOVE);
-    if(ret == -1)
-    {
-        perror("splice error\n");
-        exit(1);
+        ret = splice(fd, NULL, pipefd[1], NULL, 32768,
+                SPLICE_F_MORE | SPLICE_F_MOVE);
+        if(ret == 0)
+        {
+            break;
+        }
+        else if(ret == -1)
+        {
+            perror("splice error\n");
+            exit(1);
+        }
+        ret = splice(pipefd[0], NULL, w_fd, NULL, 32768,
+                SPLICE_F_MORE | SPLICE_F_MOVE);
+        if(ret == -1)
+        {
+            perror("splice error\n");
+            exit(1);
+        }
     }
 }
 

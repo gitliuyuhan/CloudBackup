@@ -39,13 +39,17 @@
 /* 线程池 */
 #include "ThreadPool.h"
 
+#include "Client.h"
+
 enum { maxCon = 10000};
 
 class workServer
 {
     public:
-        /* 构造函数，初始化ip和端口 */
-        workServer(std::string m_ip, int m_port);
+        /* 构造函数，初始化ip和端口 , 初始化负载服务器的ip和端口*/
+        workServer(std::string m_ip, int m_port, std::string l_ip, int l_port);
+
+
         /* 析构函数，关闭打开的socket */
         ~workServer();
     
@@ -83,9 +87,7 @@ class workServer
         ThreadPool threadpool;
 
         /* 服务端对于负载均衡服务器充当Clinet */
-        //Client
-        
-    
+        ServerClient loadClient;
 };
 
 #endif
