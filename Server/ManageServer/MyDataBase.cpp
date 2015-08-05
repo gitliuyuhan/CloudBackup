@@ -5,6 +5,9 @@
   > Company:  Xiyou Linux Group
   > Created Time: 2015年08月02日 星期日 17时45分16秒
  ************************************************************************/
+#ifndef _MYSQL_CONNECTION_
+#define _MYSQL_CONNECTION_
+
 
 #include<iostream>
 #include<string>
@@ -12,6 +15,15 @@
 #include<cerrno>
 #include<mysql/mysql.h>
 #include"jsoncpp-src-0.5.0/include/json/json.h"
+#include<mysql_driver.h>
+#include<mysql_connection.h>
+
+#include <cppconn/driver.h>
+#include <cppconn/statement.h>
+#include <cppconn/prepared_statement.h>
+#include <cppconn/resultset.h>
+#include <exception>
+
 
 #define HOST "localhost"
 #define DATABASE ""
@@ -36,7 +48,7 @@ class MyDataBase {
 
         /*查询数据库  参数为sql语句*/
         void MySqlQuery(std::string & sql)  {
-            if((t = mysql_real_query(&mysql , sql , (unsigned int)strlen(sql))))  {
+            if(( mysql_real_query(&mysql , sql , (unsigned int)sql.length()))  {
                 std::cout << "Error Making Query:" << mysql_error(&mysql) << std::endl;
             } else {
                 res = mysql_store_result(&mysql);
@@ -47,13 +59,13 @@ class MyDataBase {
         int AccountPasswd(std::string UserName , std::string PassWord) {
             std::string sql = "select * from UserInfo where Acount=" + UserName+";";
             MySqlQuery(sql);
-            while(row = mysql_fetch_row(res)) {
+            while(row == mysql_fetch_row(res)) {
                 //判断UserName和Account是否相等
                 if(UserName != row[1] || PassWord != row[2])  {
                     return -1;
                 }
                 else {
-                    Uid = row[0];
+                    Uid = atoi(row[0]);
                     return 1;
                 }
             }
@@ -61,7 +73,7 @@ class MyDataBase {
         }
 
         /*注册用户  先判断有没有此用户*/
-        int Register(std::sting UserName , std::string PassWord , std::string Email)  {
+        int Register(std::string UserName , std::string PassWord , std::string Email)  {
             std::string sql = "select * from UserInfo where Acount=" + UserName+";";
             MySqlQuery(sql);
             if(res->row_count != NULL)  {
@@ -87,9 +99,9 @@ class MyDataBase {
             MySqlQuery(sql);
             int i = 0;
             int num = dir.length();
-            std::string temp , str;
+            std::string temp;
             while(row = mysql_fetch_row(res)) {
-                str = row;
+                std::string str(row);
                 int loc = str.find('/' , num);
                 if(loc)  {
                     temp = str.substr(num , loc - num + 1);

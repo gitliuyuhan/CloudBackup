@@ -25,6 +25,8 @@
 #include<condition_variable>
 #include<atomic>
 #include"Epoll.hpp"
+#include"Mission.cpp"
+#include"ThreadPoll.hpp"
 
 void RecvFromClient( Epoll * e , const int & socketfd) {
     char buf[TCP_BUFFER_SIZE];
@@ -43,7 +45,10 @@ void RecvFromClient( Epoll * e , const int & socketfd) {
         }
         else{
             //判断用户的行为
-            UserRequest(buf,socketfd);
+            //UserRequest(buf,socketfd);
+            mission[socketfd]->buf = buf;
+            mission[socketfd]->socketfd = socketfd;
+            pool.AddTask(mission[socketfd]);
         }
     }
 }
@@ -78,6 +83,9 @@ void EpollMission( Epoll & e ,char * ip , char * port )  {
 
 int main( int argc , char * argv[] )  {
     pthread_t EpollThreadID;
+    Mission mission[MaxClientConnection];
+    ThreadPoll pool(8);
+
     Epoll e;
     pthread_create(&EpollThreadID , NULL , EpollMission ,(e , argv[1] , argv[2]));
     EpollThreadID.join();

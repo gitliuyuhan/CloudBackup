@@ -153,7 +153,7 @@ class Mission{
         }
 
         //根据用户给的行为来判断需要调用什么函数
-        void UserRequest(std::string & buf , int & socketfd) {
+        void UserRequest() {
             Json::Reader reader;
             Json::Value root;
             int status;
@@ -176,4 +176,7 @@ class Mission{
         }
     private:
         MyDataBase db[MaxClientConnection];
+    public:
+        std::string buf;
+        int socketfd;
 };
