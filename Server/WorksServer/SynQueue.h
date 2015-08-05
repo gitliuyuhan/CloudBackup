@@ -55,7 +55,8 @@ class SynQueue
             t = queue.front();
             queue.pop_front();
             notFull.notify_one();
-            t();
+            auto task = std::get<0>(t);
+            task(std::get<1>(t), std::get<2>(t));
         }
 
         /* 停止所有线程在任务队列中存取任务 */

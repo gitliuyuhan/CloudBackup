@@ -22,7 +22,13 @@
 #include <thread>
 #include <memory>
 #include <atomic>
+#include <tuple>
 
+/* 上传下载函数需要socketfd和MD5值 */
+using Task = std::function<bool(int, std::string)>;
+using Handler = std::tuple<Task, int, std::string>;
+
+/* 默认线程任务队列大小 */
 const int MaxTaskCount = 100;
 
 class ThreadPool
@@ -30,10 +36,13 @@ class ThreadPool
 
     public:
         /* 上传下载任务 */
-        using Task = std::function<void()>;
+        //using Task = std::function<void()>;
+
+        /* 线程默认数量为cpu核心数x2 */
         ThreadPool(int ThreadNum = std::thread::hardware_concurrency()):
             queue(MaxTaskCount)
         {
+            /* 初始化线程池 */
             Start(ThreadNum);
         }
 
@@ -49,14 +58,16 @@ class ThreadPool
             std::call_once(flag, [this] {StopThreadGroup(); });
         }
 
-        void AddTask(const Task&task)
+        /* 添加任务 */
+        void AddTask(const Handler&hand)
         {
-            queue.Put(task);
+            queue.Put(hand);
         }
 
-        void AddTask(Task &&task)
+        /* 添加任务右值版本 */
+        void AddTask(Handler &&hand)
         {
-            queue.Put(task);
+            queue.Put(hand);
         }
 
     private:
@@ -91,12 +102,12 @@ class ThreadPool
         {
             while(running)
             {
-                Task task;
+                Handler hand;
                 if(!running)
                 {
                     return;
                 }
-                queue.Take(task);
+                queue.Take(hand);
             }
         }
 
@@ -104,7 +115,7 @@ class ThreadPool
         /* 线程池 */
         std::list<std::shared_ptr<std::thread>> threadGroup;
         /* 任务队列 */
-        SynQueue<Task>queue;
+        SynQueue<Handler> queue;
         /* 原子布尔值 */
         std::atomic_bool running;
         /* 辅助变量 */
