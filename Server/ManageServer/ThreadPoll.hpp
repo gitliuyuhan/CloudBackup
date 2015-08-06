@@ -181,7 +181,7 @@ class ThreadPool{
         }
 
         std::list<std::shared_ptr<std::thread>> m_ThreadGroup;
-        SyncQueue<Task> m_queue;
+        SyncQueue<T> m_queue;
         std::atomic_bool m_running;
         std::once_flag m_flag;
 };

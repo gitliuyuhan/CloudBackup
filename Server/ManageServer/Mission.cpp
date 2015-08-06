@@ -33,7 +33,7 @@
 
 class Mission{
     public:
-        Mission(char * ip , char * port):e(ip , port){}
+        Mission(){}
         ~Mission() {}
 
         //验证账户密码任务
@@ -79,7 +79,7 @@ class Mission{
         }
         //重命名文件或目录
         int RenameFileName(Json::Value root , int & socketfd) {
-            std::sting OldName , NewName;
+            std::string OldName , NewName;
             OldName = root["OldName"].asString();
             NewName = root["NewName"].asString();
             if( 1 == db[socketfd].RenameFileName(OldName , NewName)) {
@@ -121,7 +121,7 @@ class Mission{
             ServerFilePath = db[socketfd].DownloadFile(UserFilePath);
             croot["PATH"] = ServerFilePath;
             //给客户端发过去
-            char * buf = croot.toStyledString();
+            char * buf = croot.toStyledString().c_str();
             send(socketfd , (void *)buf , sizeof(buf) , 0);
         }
         //监控文件
@@ -162,7 +162,8 @@ class Mission{
                 status = root["status"].asInt();
             }
 
-            switch (status):
+            switch (status)
+            {
             case 1:AccountPasswd(root , socketfd);break;
             case 2:Register(root , socketfd);break;
             case 3:DirFiles(root , socketfd);break;
@@ -174,9 +175,8 @@ class Mission{
             case 9:MonitorFile(root , socketfd);break;
             case 10:RestoreFile(root , socketfd);break;
         }
-    private:
-        MyDataBase db[MaxClientConnection];
     public:
+        MyDataBase db[MaxClientConnection];
         std::string buf;
         int socketfd;
 };
