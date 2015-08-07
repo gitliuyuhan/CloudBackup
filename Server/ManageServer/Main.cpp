@@ -25,8 +25,11 @@
 #include<condition_variable>
 #include<atomic>
 #include"Epoll.hpp"
+#include"Mission.cpp"
+#include"ThreadPool.hpp"
 
-void RecvFromClient( Epoll * e , const int & socketfd) {
+template<typename T>
+void RecvFromClient( Epoll & e , const int & socketfd , ThreadPool<T> & pool , Mission  mission[MaxClientConnection]) {
     char buf[TCP_BUFFER_SIZE];
     while(1) {
         memset( buf , '\0' , TCP_BUFFER_SIZE );
@@ -43,12 +46,16 @@ void RecvFromClient( Epoll * e , const int & socketfd) {
         }
         else{
             //判断用户的行为
-            UserRequest(buf,socketfd);
+            //UserRequest(buf,socketfd);
+            mission[socketfd].buf = buf;
+            mission[socketfd].socketfd = socketfd;
+            pool.AddTask(mission[socketfd]);
         }
     }
 }
 
-void EpollMission( Epoll & e ,char * ip , char * port )  {
+template<typename T>
+void EpollMission( Epoll & e , ThreadPool<T> & pool ,char * ip , char * port , Mission  mission[MaxClientConnection])  {
     int num;
     int socketfds[MaxClientConnection];
     e.CreateTcpSocket();
@@ -67,7 +74,7 @@ void EpollMission( Epoll & e ,char * ip , char * port )  {
                 e.addfd(e.epollfd , connfd);
             }
             else if( e.events[i].events & EPOLLIN )  {
-                RecvFromClient(socketfd);
+                RecvFromClient( e , socketfd , pool , mission);
             }
 
         }
@@ -78,10 +85,11 @@ void EpollMission( Epoll & e ,char * ip , char * port )  {
 
 int main( int argc , char * argv[] )  {
     pthread_t EpollThreadID;
-    Epoll e;
-    pthread_create(&EpollThreadID , NULL , EpollMission ,(e , argv[1] , argv[2]));
-    EpollThreadID.join();
+    Mission mission[MaxClientConnection];
+    ThreadPool<Mission> pool(8);
+
+    Epoll e(argv[1] , argv[2]);
+    EpollMission(e , pool ,argv[1] , argv[2] , mission);
 
     return EXIT_SUCCESS;
 }
-
