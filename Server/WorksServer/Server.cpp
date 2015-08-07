@@ -24,7 +24,7 @@
 #include <fcntl.h>
 
 
-/* constructor */
+/* constructor  */
 workServer::
 workServer(std::string m_ip, int m_port, std::string l_ip, int l_port):
     ip(m_ip), port(m_port), threadpool(10), loadClient(l_ip, l_port)

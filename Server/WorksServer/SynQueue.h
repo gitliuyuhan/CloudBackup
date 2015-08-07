@@ -44,17 +44,20 @@ class SynQueue
         /* 从队列中取事件 */
         void Take(T &t)
         {
-            std::unique_lock<std::mutex> locker(mutex);
-            notEmpty.wait(locker, [this]{
-                    return stop || NotEmpty();
-                    });
-            if(stop)
+            /* 早点释放锁，不加作用域每次只能单用户下载 */
             {
-                return;
+                std::unique_lock<std::mutex> locker(mutex);
+                notEmpty.wait(locker, [this]{
+                        return stop || NotEmpty();
+                        });
+                if(stop)
+                {
+                    return;
+                }
+                t = queue.front();
+                queue.pop_front();
+                notFull.notify_one();
             }
-            t = queue.front();
-            queue.pop_front();
-            notFull.notify_one();
             auto task = std::get<0>(t);
             task(std::get<1>(t), std::get<2>(t));
         }
