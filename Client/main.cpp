@@ -17,13 +17,11 @@ int main(int argc,char* argv[])
     QApplication app(argc,argv);
     QTextCodec::setCodecForTr(QTextCodec::codecForLocale()); //设置编码
 
-    MainWindow    mainWindow;
+    MainWindow    *mainWindow = new MainWindow;
 
-    EnterWidget   w;
-
-    ApplyDialog   a;
+    EnterWidget   enterWidget;
     
-    QObject::connect(w.loginWidget,SIGNAL(LoginOk()),mainWindow.mainSplitter,SLOT(show()));
+    QObject::connect(enterWidget.loginWidget,SIGNAL(LoginOk(QString,QString,int,QString,QString)),mainWindow,SLOT(ShowMainWindow(QString,QString,int,QString,QString)));
 
     
     return app.exec();

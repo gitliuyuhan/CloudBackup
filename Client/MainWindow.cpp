@@ -75,6 +75,16 @@ MainWindow::MainWindow(QMainWindow* parent):QMainWindow(parent)
     mainSplitter->addWidget(topWidget);
     mainSplitter->addWidget(baseSplitter);
     mainSplitter->resize(QSize(800,600));
-//    mainSplitter->show();
+
+}
+
+/* 显示主界面 */
+void MainWindow::ShowMainWindow(QString ip,QString port,int sock,QString sname,QString sjson)
+{
+    mainSplitter->show();
+    servIp = ip;
+    servPort = port;
+    sockfd = sock;
+    userName = sname;
 }
 
