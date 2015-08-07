@@ -33,7 +33,7 @@
 
 class Mission{
     public:
-        Mission(char * ip , char * port):e(ip , port){}
+        Mission(){}
         ~Mission() {}
 
         //验证账户密码任务
@@ -79,11 +79,11 @@ class Mission{
         }
         //重命名文件或目录
         int RenameFileName(Json::Value root , int & socketfd) {
-            std::sting OldName , NewName;
+            std::string OldName , NewName;
             OldName = root["OldName"].asString();
             NewName = root["NewName"].asString();
             if( 1 == db[socketfd].RenameFileName(OldName , NewName)) {
-               return 1;
+                return 1;
             }
             return -1;
         }
@@ -114,16 +114,18 @@ class Mission{
         }
 
         //下载文件
-        int DownloadFile(Json::Value root , int & socketfd)  {
+        void DownloadFile(Json::Value root , int & socketfd)  {
             Json::Value croot;
             std::string UserFilePath , ServerFilePath;
             UserFilePath = root["UserFilePath"].asString();
             ServerFilePath = db[socketfd].DownloadFile(UserFilePath);
             croot["PATH"] = ServerFilePath;
             //给客户端发过去
-            char * buf = croot.toStyledString();
+            std::string s = croot.toStyledString();
+            const char * buf = s.c_str();
             send(socketfd , (void *)buf , sizeof(buf) , 0);
         }
+
         //监控文件
         int MonitorFile(Json::Value root , int & socketfd)  {
             std::string UserFilePath , UserFileSize , ServerFilePath , MD5;
@@ -141,19 +143,20 @@ class Mission{
         }
 
         //恢复文件
-        int RestoreFile(Json::Value root , int & socketfd)  {
+        void RestoreFile(Json::Value root , int & socketfd)  {
             Json::Value croot;
             std::string UserFilePath , ServerFilePath;
             UserFilePath = root["UserFilePath"].asString();
             ServerFilePath = db[socketfd].DownloadFile(UserFilePath);
             croot["PATH"] = ServerFilePath;
             //给客户端发过去
-            char * buf = croot.toStyledString();
+            std::string s = croot.toStyledString();
+            const char * buf = s.c_str();
             send(socketfd , (void *)buf , sizeof(buf) , 0);
         }
 
         //根据用户给的行为来判断需要调用什么函数
-        void UserRequest(std::string & buf , int & socketfd) {
+        void UserRequest() {
             Json::Reader reader;
             Json::Value root;
             int status;
@@ -162,18 +165,22 @@ class Mission{
                 status = root["status"].asInt();
             }
 
-            switch (status):
-            case 1:AccountPasswd(root , socketfd);break;
-            case 2:Register(root , socketfd);break;
-            case 3:DirFiles(root , socketfd);break;
-            case 4:CreateNewDir(root , socketfd);break;
-            case 5:RenameFileName(root , socketfd);break;
-            case 6:DeleteFileORDir(root , socketfd);break;
-            case 7:UploadFile(root , socketfd);break;
-            case 8:DownloadFile(root, socketfd);break;
-            case 9:MonitorFile(root , socketfd);break;
-            case 10:RestoreFile(root , socketfd);break;
+            switch (status)
+            {
+                case 1:AccountPasswd(root , socketfd);break;
+                case 2:Regiester(root , socketfd);break;
+                case 3:DirFiles(root , socketfd);break;
+                case 4:CreateNewDir(root , socketfd);break;
+                case 5:RenameFileName(root , socketfd);break;
+                case 6:DeleteFileORDir(root , socketfd);break;
+                case 7:UploadFile(root , socketfd);break;
+                case 8:DownloadFile(root, socketfd);break;
+                case 9:MonitorFile(root , socketfd);break;
+                case 10:RestoreFile(root , socketfd);break;
+            }
         }
-    private:
+    public:
         MyDataBase db[MaxClientConnection];
+        std::string buf;
+        int socketfd;
 };

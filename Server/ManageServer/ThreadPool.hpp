@@ -158,7 +158,7 @@ class ThreadPool{
                     if(!m_running)  {
                         return;
                     }
-                    k->UserRequest();
+                    k.UserRequest();
                 }
             }
         }
