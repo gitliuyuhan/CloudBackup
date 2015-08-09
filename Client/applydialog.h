@@ -13,6 +13,7 @@
 #include<QPushButton>
 #include<QLabel>
 #include<QLineEdit>
+#include<QString>
 
 
 class ApplyDialog : public QDialog
@@ -23,11 +24,12 @@ public:
     ~ApplyDialog(){}
 signals:
     //注册成功
-    void ApplyOk();
+    void ApplyOk(QString,QString,int,QString,QString);
 private slots:
     //注册
     void Applying();
 private:
+    QLabel*        warnLabel;
     QLabel*        nameLabel;
     QLineEdit*     nameLineEdit;
     QLabel*        namewarnLabel;
@@ -41,6 +43,13 @@ private:
     QLabel*        mailwarnLabel;
     QLabel*        titleLabel;
     QPushButton*   applyButton;
+public:
+    //IP
+    QString        qIp;
+    //端口
+    QString        qPort;
+    //连接套接字
+    int            sockfd;
 };
 
 #endif//APPLYDIALOG_H

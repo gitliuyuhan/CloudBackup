@@ -23,6 +23,7 @@ public:
     LoginWidget*   loginWidget;
 private slots:
     void ShowLoginWidget();
+
 private:
     QSplitter*     mainSplitter;
     QWidget*       menuWidget;
