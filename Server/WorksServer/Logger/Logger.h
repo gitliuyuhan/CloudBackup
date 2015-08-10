@@ -38,6 +38,10 @@
 #include <mutex>
 #include <condition_variable>
 #include <thread>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 
 
 class Logger
@@ -61,7 +65,7 @@ class Logger
         /*  */
         static std::shared_ptr<Buffer> curBuf;
         /*  */
-        static std::list<std::shared_ptr<Buffer>> bufVector;
+        static std::list<std::shared_ptr<Buffer>> bufList;
         /*  */
         static std::shared_ptr<Buffer> useFul();
 
@@ -70,10 +74,10 @@ class Logger
         static std::mutex mutex;
 
         static std::thread readThread;
+        
         static void Threadfunc();
         static void func();
         static bool isHave();
-
 
     private:
         /* 不能被拷贝或赋值 */
@@ -81,7 +85,6 @@ class Logger
         //Logger& operator=(const Logger&) = delete;
 };
 
-int readableNum = 0;
 
 bool
 Logger::isHave()
@@ -92,6 +95,8 @@ Logger::isHave()
 void 
 Logger::Threadfunc()
 {
+    std::cout << "线程开始执行啦" << std::endl;
+    readThread.detach();
     while(1)
     {
         func();
@@ -101,48 +106,65 @@ Logger::Threadfunc()
 void
 Logger::func()
 {
+    std::cout << __LINE__ << std::endl;
     std::unique_lock<std::mutex> locker(mutex);
-    auto iter = bufVector.begin();
+    auto iter = bufList.begin();
     if(readableNum == 0)
     {
+        std::cout << "数据为空，线程被阻塞" << std::endl;
         readableBuf.wait(locker, Logger::isHave);
+        std::cout << "线程被唤醒" << std::endl;
     }
-    for(; iter != bufVector.end(); ++iter)
+    std::cout << "heihei" << std::endl;
+    std::cout << "capacity" << bufList.size() << std::endl;
+    /* 找数据不为空的Buffer */
+    for(; iter != bufList.end(); ++iter)
     {
-        if((*iter)->Size() == 0)
+        std::cout << "- - " << std::endl;
+        if((*iter)->Size() != 0)
             break;
     }
-    if(iter == bufVector.end())
+    std::cout << "- - -" << std::endl; 
+    /* 如果到末尾没找到，没有数据可读 */
+    if(iter == bufList.end())
+    {
+        std::cout << "没有数据读" << std::endl;
         return;
+    }
     else
     {
+        std::cout << "-------------------------------" << std::endl;
         /* write file */
-        /*  */
+        int fd = open("1.txt", O_RDWR | O_APPEND, 00700);
+        if(fd < 0)
+        {
+            perror("open error\n");
+            exit(1);
+        }
+        write(fd, iter->get(), (*iter)->Capacity());
         bzero(iter->get(), (*iter)->Capacity());
+        (*iter)->setSize();
         --readableNum;
     }
 }
-
-std::thread
-Logger::readThread(Threadfunc);
 
 /* return useful buffer, if not have, return a new buffer */
 std::shared_ptr<Buffer> 
 Logger::
 useFul()
 {
-    auto iter = bufVector.begin();
-    for(; iter != bufVector.end(); ++iter)
+    auto iter = bufList.begin();
+    for(; iter != bufList.end(); ++iter)
     {
         if((*iter)->Size() == 0)
         {
             break;
         }
     }
-    if(iter == bufVector.end())
+    if(iter == bufList.end())
     {
         std::shared_ptr<Buffer> p = std::make_shared<Buffer>();
-        bufVector.push_back(std::move(p));
+        bufList.push_back(std::move(p));
         return p;
     }
     return *iter;
@@ -152,6 +174,7 @@ void
 Logger::
 logStream(const char* mesg, int len)
 {
+    std::cout << "logStream" << std::endl;
     if(curBuf->avail() > len)
     {
         curBuf->append(mesg, len);
@@ -159,12 +182,19 @@ logStream(const char* mesg, int len)
     else
     {
         /* add date not rush mutex, only buffer full rush mutex */
+        std::cout << "mutex" << std::endl;
         std::unique_lock<std::mutex> locker(mutex);
+        std::cout << "useful" << std::endl;
         auto useBuf = useFul();
+        std::cout << "swap" << std::endl;
         curBuf.swap(useBuf);
+        std::cout << "readablenum" << std::endl;
         ++readableNum;
+        std::cout << readableNum << std::endl;
+        std::cout << "notify_one" << std::endl;
         readableBuf.notify_one();
     }
+    std::cout << "---" << std::endl;
 }
 
 std::shared_ptr<Logger>
@@ -182,8 +212,9 @@ setLogger()
     {
         myLogger = std::move(std::make_shared<Logger>());
         curBuf = std::make_shared<Buffer>();
-        (*bufVector.begin()) = std::make_shared<Buffer>();
-        (*(++bufVector.begin())) = std::make_shared<Buffer>();
+        bufList.resize(2);
+        (*bufList.begin()) = std::make_shared<Buffer>();
+        (*(++bufList.begin())) = std::make_shared<Buffer>();
     }
     return myLogger;
 }
@@ -196,8 +227,9 @@ setLogger(size_t bufSize)
     {
         myLogger = std::move(std::make_shared<Logger>());
         curBuf = std::make_shared<Buffer>(bufSize);
-        (*bufVector.begin()) = std::make_shared<Buffer>(bufSize);
-        (*(++bufVector.begin())) = std::make_shared<Buffer>(bufSize);
+        bufList.resize(2);
+        (*bufList.begin()) = std::make_shared<Buffer>(bufSize);
+        (*(++bufList.begin())) = std::make_shared<Buffer>(bufSize);
     }
     return myLogger;
 }

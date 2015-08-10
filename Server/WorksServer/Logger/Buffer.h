@@ -22,6 +22,7 @@
 
 #include <vector>
 #include <cstring>
+#include <iostream>
 
 /* 
  * Buffer缓冲区类
@@ -43,25 +44,37 @@ class Buffer
         /* 返回缓冲区的容量 */
         size_t Capacity()
         {
+            std::cout << "capacity" << std::endl;
             return buffer.capacity();
         }
 
         /* 返回缓冲区的大小 */
         size_t Size()
         {
-            return buffer.size();
+            std::cout << "writable" << writable << std::endl;
+            return writable;
+        }
+
+        /* set Size */
+        void setSize(void)
+        {
+            readable = 0;
+            writable = 0;
         }
 
         /* 向buffer中添加数据 */
         void append(const char* mesg, int len)
         {
+            std::cout << "append" << std::endl;
             strncpy(WritePoint(), mesg, len);
+            writable += len;
         }
 
         /* 返回buffer可用大小 */
         size_t avail()
         {
-            return buffer.capacity()-writable;
+            std::cout << "avail" << std::endl;
+            return Capacity()-writable;
         }
 
     private:
@@ -95,7 +108,6 @@ class Buffer
         size_t writable;
 };
 
-size_t initializeSize = 4096;
 
 
 #endif
