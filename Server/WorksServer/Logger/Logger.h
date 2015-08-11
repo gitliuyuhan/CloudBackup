@@ -120,11 +120,9 @@ Logger::func()
     /* 找数据不为空的Buffer */
     for(; iter != bufList.end(); ++iter)
     {
-        std::cout << "- - " << std::endl;
         if((*iter)->Size() != 0)
             break;
     }
-    std::cout << "- - -" << std::endl; 
     /* 如果到末尾没找到，没有数据可读 */
     if(iter == bufList.end())
     {
@@ -133,7 +131,6 @@ Logger::func()
     }
     else
     {
-        std::cout << "-------------------------------" << std::endl;
         /* write file */
         int fd = open("1.txt", O_RDWR | O_APPEND, 00700);
         if(fd < 0)
@@ -194,7 +191,6 @@ logStream(const char* mesg, int len)
         std::cout << "notify_one" << std::endl;
         readableBuf.notify_one();
     }
-    std::cout << "---" << std::endl;
 }
 
 std::shared_ptr<Logger>
