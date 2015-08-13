@@ -33,7 +33,7 @@ private slots:
     void NewFolderSlot();
     //文件下载保存对话框
     void ShowDownFileDialog();
-    //下载文件对话框
+    //上传文件对话框
     void ShowUpFileDialog();
 
 private:

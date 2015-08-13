@@ -7,19 +7,32 @@
  =======================================================*/
 
 #include"mainwindow.h"
+#include"connectserv.h"
 
 #include<QHBoxLayout>
+#include<QString>
+
+#include<json/json.h>
+#include<string>
+
+#define  BUFSIZE    1024
+
+extern int         sockFd;
+extern QString     servIp;
+extern QString     servPort;
+extern QString     userName;
 
 MainWindow::MainWindow(QMainWindow* parent):QMainWindow(parent)
 {
     fileWidget = new FileWidget;
     monitorWidget = new MonitorWidget;
+    udFileWidget = new UDFileWidget;
 
     mainSplitter = new QSplitter(Qt::Vertical);
     QSplitter  *baseSplitter = new QSplitter(Qt::Horizontal);
     //项目列表
     QFont   font;
-    font.setPointSize(15);
+    font.setPointSize(12);
 
     projectMenu = new QListWidget;
     projectMenu->setIconSize(QSize(25,25));
@@ -29,19 +42,28 @@ MainWindow::MainWindow(QMainWindow* parent):QMainWindow(parent)
 
     QListWidgetItem   *item1 = new QListWidgetItem(QIcon(":/image/file.png"),tr("我的文件"));
     item1->setFont(font);
+    item1->setSizeHint(QSize(0,40));   
     projectMenu->addItem(item1);
 
     QListWidgetItem   *item2 = new QListWidgetItem(QIcon(":/image/monitor.png"),tr("文件监控"));
     item2->setFont(font);
+    item2->setSizeHint(QSize(0,40));
     projectMenu->addItem(item2);
+
+    QListWidgetItem   *item4 = new QListWidgetItem(QIcon(":/image/trans.jpg"),tr("传输列表"));
+    item4->setFont(font);
+    item4->setSizeHint(QSize(0,40));
+    projectMenu->addItem(item4);
 
     QListWidgetItem   *item3 = new QListWidgetItem(QIcon(":/image/message.png"),tr("消息通知"));
     item3->setFont(font);
+    item3->setSizeHint(QSize(0,40));
     projectMenu->addItem(item3);
 
     stackWidget = new QStackedWidget(this);
     stackWidget->addWidget(fileWidget);
     stackWidget->addWidget(monitorWidget);
+    stackWidget->addWidget(udFileWidget);
     
     connect(projectMenu,SIGNAL(currentRowChanged(int)),stackWidget,SLOT(setCurrentIndex(int)));
     projectMenu->setCurrentRow(0);
@@ -84,7 +106,50 @@ void MainWindow::ShowMainWindow(QString ip,QString port,int sock,QString sname,Q
     mainSplitter->show();
     servIp = ip;
     servPort = port;
-    sockfd = sock;
+    sockFd = sock;
     userName = sname;
+
+    pthread_create(&thid,NULL,RecvThread,this);
+}
+
+/* 接收消息线程 */
+void* MainWindow::RecvThread(void* arg)
+{
+    MainWindow*       cthis = (MainWindow*)arg;
+    char       buf[BUFSIZE];
+    int        ret = -1;
+    Json::Reader      reader;
+    Json::Value       json;
+    int        mark = -1;
+    
+    while(1)
+    {
+        memset(buf,'\0',sizeof(buf));
+
+        ret = recv(sockFd,buf,BUFSIZE,0);
+        if(ret<=0)
+            continue;
+        buf[strlen(buf)] = '\0';
+        cout<<"recv: "<<buf<<endl;
+        if(reader.parse(buf,json))
+        {
+            mark = json["status"].asInt();
+        }
+        string    strbuf = buf;
+        switch(mark)
+        {
+            case 7:
+                //发射上传文件信号
+                cout<<"recv 7\n";
+                cthis->udFileWidget->EmitUpFileSig(strbuf);
+                cout<<"7\n";
+                break;
+            case 8:
+                //发射下载文件信号
+                cthis->udFileWidget->EmitDownFileSig(buf);
+                break;
+        }
+    }
+    pthread_exit(0);
 }
 

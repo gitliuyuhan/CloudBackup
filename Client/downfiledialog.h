@@ -22,12 +22,14 @@ public:
     DownFileDialog(QDialog* parent=0);
     ~DownFileDialog(){}
 private slots:
-    void LinePathShow(const QString &path);    
+    void LinePathShow(const QString &path);
+    void DownLoadFile();
 private:
     QFileDialog*    fileDialog;
     QLabel*         saveLabel;
     QLineEdit*      saveLineEdit;
     QPushButton*    saveButton;
+
 };
 
 #endif//DOWNFILEDIALOG_H

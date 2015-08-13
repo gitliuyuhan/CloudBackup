@@ -17,9 +17,13 @@
 #include<unistd.h>
 #include<string.h>
 #include<stdlib.h>
+#include<sys/stat.h>
+#include<fcntl.h>
+#include<sys/sendfile.h>
 
 using namespace std;
 
+/* 连接服务器 */
 int ConnectServer(QString ip,QString port)
 {
     string  strip,strport;
@@ -43,10 +47,23 @@ int ConnectServer(QString ip,QString port)
 
 }
 
+/* 关闭文件描述符 */
 void closefd(int sock)
 {
     close(sock);
 }
 
+/* 打开文件 */
+int openfile(const char* name)
+{
+    int fileFd = open(name,O_WRONLY | O_CREAT | O_EXCL,S_IRUSR | S_IWUSR | S_IXUSR);
+    return fileFd;
+}
 
+/* 打开文件 */
+int openfile(const char* pathname,int flags)
+{
+    int fd = open(pathname,flags);
+    return fd;
+}
 
