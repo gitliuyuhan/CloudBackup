@@ -146,7 +146,7 @@ void* MainWindow::RecvThread(void* arg)
                 break;
             case 8:
                 //发射下载文件信号
-                cthis->udFileWidget->EmitDownFileSig(buf);
+                cthis->udFileWidget->EmitDownFileSig(strbuf);
                 break;
         }
     }

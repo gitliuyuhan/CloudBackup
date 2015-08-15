@@ -43,6 +43,8 @@ FileWidget::FileWidget(QWidget* parent) : QWidget(parent)
     mainLayout->addLayout(topLayout);
     mainLayout->addWidget(fileListWidget);
     setLayout(mainLayout);
+
+    connect(fileListWidget,SIGNAL(EnterFolderSig(QString)),this,SLOT(SetCurrentFolder(QString)));
 }
 
 /* 新建文件夹槽函数 */
@@ -64,9 +66,11 @@ void FileWidget::contextMenuEvent(QContextMenuEvent* event) //重写鼠标右击
 
     widgetMenu->addAction(uploadAction);
 
+    //判断鼠标点击位置是否为item
     QListWidgetItem*    item1 = fileListWidget->itemAt(mapFromGlobal(QCursor::pos()));
     if(item1!=NULL)
     {
+        this->selectedFile = item1->text();
         fileListWidget->setFileItem(item1);
         QMenu* fileMenu = new QMenu(this);
         QAction* downloadAction = new QAction(QIcon(":/image/download.png"),tr("下载"),this);
@@ -90,10 +94,12 @@ void FileWidget::contextMenuEvent(QContextMenuEvent* event) //重写鼠标右击
 }
 
 
-/* 保存下载文件对话框槽函数 */
+/* 下载文件对话框槽函数 */
 void FileWidget::ShowDownFileDialog()
 {
     DownFileDialog*   downDialog = new DownFileDialog;
+    downDialog->file = selectedFile;
+    downDialog->filePath = (currentFolderLabel->text()).replace(0,2,"") + selectedFile;
     downDialog->show();
 }
 
@@ -102,4 +108,10 @@ void FileWidget::ShowUpFileDialog()
 {
     UpFileDialog*     upDialog = new UpFileDialog;
     upDialog->show();
+}
+
+//设置当前目录
+void FileWidget::SetCurrentFolder(QString folder)
+{
+    currentFolderLabel->setText((currentFolderLabel->text())+folder+"/");
 }

@@ -131,8 +131,34 @@ void UDFileWidget::UpFile(string strjson)
 }
 
 //下载文件
-void UDFileWidget::DownFile(string json)
+void UDFileWidget::DownFile(string strjson)
 {
+    string   strfile,strpath,strsave;
+    //解析Json
+    Json::Value      json;
+    Json::Reader     reader;
+    if(reader.parse(strjson,json))
+    {
+        strpath = json["Path"].asString();
+        strsave = json["SavePath"].asString();
+    }
+
+    //添加条目
+    UDItemWidget*  iWidget = new UDItemWidget(1,this);
+    QListWidgetItem* item = new QListWidgetItem;
+
+    iWidget->setFileLabel(QString::fromStdString(strpath));
+    item->setSizeHint(QSize(0,40));
+    this->downListWidget->addItem(item);
+    this->downListWidget->setItemWidget(item,iWidget);
+    //添加线程参数
+    struct Param*    arg = new struct Param;
+    arg->p = this;
+    arg->strjson = strjson;
+    arg->item = item;
+
+    pthread_t        thid;
+    pthread_create(&thid,NULL,DownFileThread,(void*)arg);
 }
 
 /* 上传文件线程 */
@@ -239,4 +265,123 @@ void* UDFileWidget::UpFileThread(void* arg)
 
 //下载文件线程
 void*  UDFileWidget::DownFileThread(void* arg)
-{}
+{
+    UDFileWidget*   cthis = ((struct Param*)arg)->p;
+    string strjson = ((struct Param*)arg)->strjson;
+    QListWidgetItem* item = ((struct Param*)arg)->item;
+    UDItemWidget* iWidget = (UDItemWidget*)(cthis->downListWidget->itemWidget(item));
+
+    string  strip,strport;
+    string  strfile; //下载文件名
+    string  strpath; //下载文件路径
+    string  strsave; //文件保存路径
+    string  strfiles;//服务器文件存储路径
+    string  strmd5;  //文件Md5
+    int     filesize = 0;//文件大小
+
+    //解析Json
+    Json::Reader    reader;
+    Json::Value     json;
+    if(reader.parse(strjson,json))
+    {
+        /*获取子服务器ip*/
+        //返回‘/’第一次出现的位置
+        string::size_type position;
+        strfiles = json["Files"].asString();
+        position = strfiles.find_first_of("/");
+        strip = strfiles.substr(0,position);
+
+        strport = json["Port"].asString();
+        strsave = json["SavePath"].asString();
+        strmd5 = json["Md5"].asString();
+        strfile = json["File"].asString();
+        filesize = json["Size"].asInt();
+    }
+
+    cout<<"ip: "<<strip<<"port: "<<strport<<endl;
+    //连接子服务器
+    int        worksockFd;
+    int  ret = ConnectServer(QString::fromStdString(strip),QString::fromStdString(strport));
+    if(ret<0)
+    {
+        iWidget->EmitStateSig(tr("连接失败"));
+        cout<<"连接失败\n";
+        return NULL;
+    }
+    worksockFd = ret;
+    //给子服务器发送下载请求
+    Json::Value     downjson;
+    downjson["mark"] = Json::Value(1);
+    downjson["md5"] = Json::Value(strmd5);
+    string      buf;
+    buf = downjson.toStyledString();
+    if(send(worksockFd,buf.c_str(),strlen(buf.c_str()),0)<0)
+    {
+        iWidget->EmitStateSig(tr("下载失败"));
+        cout<<"下载失败\n";
+        return NULL;
+    }
+
+    iWidget->EmitProBarRange(0,filesize);
+
+    //接收文件
+    int    fileFd;
+    cout<<"savePath:"<<strsave<<endl;
+    string     strsavefile = strsave+"/"+strfile;
+    if((fileFd = openfile(strsavefile.c_str()))<0)
+    {
+        cout<<"文件保存失败\n";
+        iWidget->EmitStateSig(tr("保存失败"));
+        return NULL;
+    }
+
+    //使用splice拷贝文件
+    int pipeFd[2];
+
+    //创建管道
+    ret = pipe(pipeFd);
+    if(ret < 0)
+    {
+        cout<<"创建管道失败\n";
+        iWidget->EmitStateSig(tr("下载失败\n"));
+        return NULL;
+    }
+
+    int sum = 0;
+
+    off_t lenth = 0;
+    //从发送端套接字将文件读入到管道
+    while(1)
+    {
+        cout<<"splice...\n";
+
+        ret = splice(worksockFd,NULL,pipeFd[1],NULL,32768,SPLICE_F_MOVE);
+        sum = sum + ret;
+     
+        cout<<"ret11 = "<<ret<<endl;
+        //从管道读出内容写入文件
+        ret = splice(pipeFd[0],NULL,fileFd,NULL,32768,SPLICE_F_MOVE);
+        lenth  = lenth + ret;
+        cout<<"ret22 = "<<ret<<endl;
+        iWidget->EmitProBarValue(lenth);
+        if(ret <= 0)
+        {
+            break;
+        }
+    }
+    cout<<"splice end\n";
+
+    if(ret == -1)
+    {
+        cout<<"下载出错\n";
+        iWidget->EmitStateSig(tr("下载失败"));
+        closefd(fileFd);
+        return NULL;
+    }
+
+    cout<<"sum = "<<sum<<endl;
+    cout<<"下载完成\n";
+    iWidget->EmitStateSig(tr("下载完成"));
+    closefd(fileFd);
+    return NULL;
+}
