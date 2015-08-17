@@ -17,6 +17,7 @@
 #include<QProgressBar>
 #include<QPushButton>
 #include<QListWidgetItem>
+#include<QTime>
 
 #include<json/json.h>
 
@@ -261,17 +262,29 @@ void* UDFileWidget::UpFileThread(void* arg)
     cout<<"len = "<<len<<endl;
     */
 
-    long long     n=1;
+    long  long     n=1;
+    int            base=0;//单位基数
     if(filesize < K)
-        n = 1;
+    {    n = 1; base = 1; }
     else if(filesize < M)
-        n = 1024;
+    {    n = 1024; base = 2; }
     else 
-        n = 1024*1024;
+    {    n = 1024*1024;
+        if(filesize < G)
+            base = 3; 
+        else
+            base = 4;
+    }
 
-    iWidget->EmitProBarRange(0,statFile.st_size/n);
+
+    iWidget->EmitProBarRange(0,statFile.st_size/(float)n,base);
     char    sendbuf[32768];
     int     len=0;
+    float   t=0;
+    float   rate = 0;
+    QTime          time;
+    time.start();             //开始计时
+
     while((len=read(fileFd,sendbuf,32768))>0)
     {
 //        cout<<"read len="<<len<<"  strlen="<<strlen(sendbuf)<<endl;
@@ -279,9 +292,23 @@ void* UDFileWidget::UpFileThread(void* arg)
         cout<<len<<endl;
         sum = sum+len;
         cout<<"len="<<len<<"  sum="<<sum<<endl;
+       
         if(sum>statFile.st_size)
             sum = (long long)statFile.st_size;
-        iWidget->EmitProBarValue(sum/n);
+        t = time.elapsed()/1000.0;
+        if(t==0)
+            t=1.0;
+        rate = (sum/1024.0)/t;
+        cout<<"t="<<t<<"  rate="<<rate<<endl;
+        if(t <= 5)
+        {
+            iWidget->EmitProBarValue(sum/(float)n,rate);
+        }
+        else if((((int)t-5)%2)==0)
+        {
+            iWidget->EmitProBarValue(sum/(float)n,rate);
+        }
+
         memset(sendbuf,'\0',sizeof(sendbuf));
     }
 
@@ -301,6 +328,7 @@ void* UDFileWidget::UpFileThread(void* arg)
     if(sum >= statFile.st_size)
     {
         iWidget->EmitStateSig(tr("上传完成"));
+        iWidget->EmitProBarValue(sum/(float)n,rate);
         cout<<"文件上传成功"<<endl;
         closefd(worksockFd);
         pthread_exit(0);
@@ -422,26 +450,49 @@ void*  UDFileWidget::DownFileThread(void* arg)
 */
 
     long  long     n=1;
+    int            base=0;//单位基数
     if(filesize < K)
-        n = 1;
+    {    n = 1; base = 1; }
     else if(filesize < M)
-        n = 1024;
+    {    n = 1024; base = 2; }
     else 
-        n = 1024*1024;
+    {    n = 1024*1024;
+         if(filesize < G)
+             base = 3; 
+         else
+             base = 4;
+    }
    
-   iWidget->EmitProBarRange(0,filesize/n);
+    iWidget->EmitProBarRange(0,filesize/(float)n,base);
     
     char     recvbuf[32768];
     long long      sum=0;
+    float          rate,t=0.0;
+    QTime          time;
+    time.start();             //开始计时
     while((ret=recv(worksockFd,recvbuf,32768,0))>0)
     {
         ret = write(fileFd,recvbuf,ret);
         sum = sum+ret;
         cout<<"ret="<<ret<<"  sum="<<sum<<endl;
-        iWidget->EmitProBarValue(sum/n);
+        t = time.elapsed()/1000.0;
+        if(t==0)
+            t=1.0;
+        rate = (sum/1024.0)/t;
+        if(t <= 5)
+        {
+            iWidget->EmitProBarValue(sum/(float)n,rate);
+        }
+        else if(((int)t-5)%2==0)
+        {
+            iWidget->EmitProBarValue(sum/(float)n,rate);
+        }
         bzero(recvbuf,32768);
         if(sum>=filesize)
+        {
+            iWidget->EmitProBarValue(sum/(float)n,rate);
             break;
+        }
     }
 
     if(ret == -1)
