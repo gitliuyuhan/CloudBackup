@@ -20,6 +20,10 @@
 
 #include<json/json.h>
 
+#define    K     1024
+#define    M     (1024*1024)
+#define    G     (1024*1024*1024)
+
 UDFileWidget::UDFileWidget(QTabWidget* parent):QTabWidget(parent)
 {
     setStyleSheet("QTabBar::tab{background: #D1EEEE;min-width:135;min-height:40;} \ QTabBar::tab:hover{background: white} \ QTabBar::tab:selected{background:white;border-color: #EE0000}");
@@ -203,17 +207,7 @@ void* UDFileWidget::UpFileThread(void* arg)
     pclose(fp);
     md5buf[32] = '\0';
 
-    //发送Md5文件名
-    Json::Value       upjson;
-    upjson["mark"] = Json::Value(2);
-    upjson["md5"] = Json::Value(md5buf);
-    string        buf;
-    buf = upjson.toStyledString();
-    if(send(worksockFd,buf.c_str(),strlen(buf.c_str()),0)<0)
-    {
-        cout<<"上传失败\n";
-        return NULL;
-    }
+    //打开文件，并获取文件大小
     int       fileFd;
     if((fileFd = openfile(strfile.c_str(),O_RDONLY))==-1)
     {
@@ -222,7 +216,29 @@ void* UDFileWidget::UpFileThread(void* arg)
     }
     struct stat  statFile;
     fstat(fileFd,&statFile);  
-    int     sum=0;
+    long long  filesize = statFile.st_size;
+    char sizebuf[64];
+    sprintf(sizebuf,"%lld",filesize);
+
+    cout<<"文件大小："<<filesize<<endl;
+    
+    //发送Md5文件名
+    Json::Value       upjson;
+    upjson["mark"] = Json::Value(2);
+    upjson["md5"] = Json::Value(md5buf);
+    upjson["Size"] = Json::Value(sizebuf);
+    string   buf;
+    buf = upjson.toStyledString();
+    cout<<buf<<endl;
+    
+    if((ret=send(worksockFd,buf.c_str(),1024,0))<0)
+    {
+        cout<<"上传失败\n";
+        return NULL;
+    }
+    cout<<ret<<endl;
+    long long     sum=0;
+    /*
     ssize_t     len = 0;
     off_t       pos = lseek(fileFd,0,SEEK_SET);
     if(pos<0)
@@ -243,6 +259,33 @@ void* UDFileWidget::UpFileThread(void* arg)
     }
     cout<<"statFile.st_size = "<<statFile.st_size<<endl;
     cout<<"len = "<<len<<endl;
+    */
+
+    long long     n=1;
+    if(filesize < K)
+        n = 1;
+    else if(filesize < M)
+        n = 1024;
+    else 
+        n = 1024*1024;
+
+    iWidget->EmitProBarRange(0,statFile.st_size/n);
+    char    sendbuf[32768];
+    int     len=0;
+    while((len=read(fileFd,sendbuf,32768))>0)
+    {
+//        cout<<"read len="<<len<<"  strlen="<<strlen(sendbuf)<<endl;
+        len = send(worksockFd,sendbuf,len,0);
+        cout<<len<<endl;
+        sum = sum+len;
+        cout<<"len="<<len<<"  sum="<<sum<<endl;
+        if(sum>statFile.st_size)
+            sum = (long long)statFile.st_size;
+        iWidget->EmitProBarValue(sum/n);
+        memset(sendbuf,'\0',sizeof(sendbuf));
+    }
+
+
     closefd(fileFd);
 
     cout<<"sum = "<<sum<<endl;
@@ -250,6 +293,8 @@ void* UDFileWidget::UpFileThread(void* arg)
     if(len == -1)
     {
         cout<<"使用sendfile失败"<<endl;
+        closefd(worksockFd);
+        pthread_exit(0);
         return NULL;
     }
 
@@ -257,9 +302,12 @@ void* UDFileWidget::UpFileThread(void* arg)
     {
         iWidget->EmitStateSig(tr("上传完成"));
         cout<<"文件上传成功"<<endl;
+        closefd(worksockFd);
         pthread_exit(0);
         return NULL;
     }
+    closefd(worksockFd);
+    pthread_exit(0);
     return NULL;
 }
 
@@ -277,7 +325,8 @@ void*  UDFileWidget::DownFileThread(void* arg)
     string  strsave; //文件保存路径
     string  strfiles;//服务器文件存储路径
     string  strmd5;  //文件Md5
-    int     filesize = 0;//文件大小
+    string  strsize; //文件大小
+    long long      filesize = 0;//文件大小
 
     //解析Json
     Json::Reader    reader;
@@ -295,7 +344,8 @@ void*  UDFileWidget::DownFileThread(void* arg)
         strsave = json["SavePath"].asString();
         strmd5 = json["Md5"].asString();
         strfile = json["File"].asString();
-        filesize = json["Size"].asInt();
+        strsize = json["Size"].asString();
+        filesize = atoll(strsize.c_str());
     }
 
     cout<<"ip: "<<strip<<"port: "<<strport<<endl;
@@ -322,7 +372,6 @@ void*  UDFileWidget::DownFileThread(void* arg)
         return NULL;
     }
 
-    iWidget->EmitProBarRange(0,filesize);
 
     //接收文件
     int    fileFd;
@@ -334,7 +383,7 @@ void*  UDFileWidget::DownFileThread(void* arg)
         iWidget->EmitStateSig(tr("保存失败"));
         return NULL;
     }
-
+/*
     //使用splice拷贝文件
     int pipeFd[2];
 
@@ -370,6 +419,30 @@ void*  UDFileWidget::DownFileThread(void* arg)
         }
     }
     cout<<"splice end\n";
+*/
+
+    long  long     n=1;
+    if(filesize < K)
+        n = 1;
+    else if(filesize < M)
+        n = 1024;
+    else 
+        n = 1024*1024;
+   
+   iWidget->EmitProBarRange(0,filesize/n);
+    
+    char     recvbuf[32768];
+    long long      sum=0;
+    while((ret=recv(worksockFd,recvbuf,32768,0))>0)
+    {
+        ret = write(fileFd,recvbuf,ret);
+        sum = sum+ret;
+        cout<<"ret="<<ret<<"  sum="<<sum<<endl;
+        iWidget->EmitProBarValue(sum/n);
+        bzero(recvbuf,32768);
+        if(sum>=filesize)
+            break;
+    }
 
     if(ret == -1)
     {
