@@ -21,6 +21,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <unistd.h>
 
 /* 初始化监控本地负载的client */
 
@@ -77,18 +78,37 @@ ServerClient(std::string i, int p):
         exit(1);
     }
 
+    /*  
     std::thread tid([&](){
-            /* 设置定时器，并初始化 */
+            // 设置定时器，并初始化 
             signal(SIGALRM, signalHandler);
             new_value.it_value.tv_sec = 0;
             new_value.it_value.tv_usec = 1;
             new_value.it_interval.tv_sec = 5;
             new_value.it_interval.tv_usec = 0;
             setitimer(ITIMER_REAL, &new_value, &old_value);
-            /* 获得带宽信息 */
+            // 获得带宽信息 
             while(1);
         }
     );
+    */
+    std::thread tid([&](){
+                while(1)
+                {
+                    std::string getinfo;
+                    getinfo += info.getInfo(cpuInfo);
+                    getinfo += "\0\n";
+                    getinfo += info.getInfo(memInfo);
+                    getinfo += "\0\n";
+                    getinfo += info.getInfo(netInfo);
+                    getinfo += "\0\n";
+                    getinfo += info.getInfo(diskInfo);
+                    getinfo += "\0\n";
+                    std::cout << getinfo << std::endl;
+                    send(loadServer_fd, getinfo.c_str(), getinfo.size(), 0);
+                    sleep(2);
+                }
+            });
     tid.detach();
 }
 
