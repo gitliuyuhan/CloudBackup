@@ -76,6 +76,5 @@ while 1:
             outputs.remove(s)
         s.close()
         del message_queues[s]
-    print "date......................................... ", result
 
 
