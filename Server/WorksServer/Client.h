@@ -33,6 +33,7 @@
 #include <arpa/inet.h>
 #include <string>
 #include <thread>
+#include "getInfo.h"
 
 
 /* 定时器执行函数 */
@@ -57,6 +58,9 @@ class ServerClient
 
         /* Client结构体 */
         struct sockaddr_in server;
+
+        /* 获取负载 */
+        getDate info;
 
 };
 

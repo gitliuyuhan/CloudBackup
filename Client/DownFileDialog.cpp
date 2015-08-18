@@ -7,9 +7,12 @@
  =======================================================*/
 
 #include"downfiledialog.h"
+#include"connectserv.h"
 
 #include<QVBoxLayout>
 #include<QHBoxLayout>
+#include<QMessageBox>
+#include<json/json.h>
 
 /* 构造函数 */
 DownFileDialog::DownFileDialog(QDialog*  parent):QDialog(parent)
@@ -23,6 +26,7 @@ DownFileDialog::DownFileDialog(QDialog*  parent):QDialog(parent)
     saveLabel = new QLabel(tr("路径："));
     saveLineEdit = new QLineEdit;
     saveButton = new QPushButton(tr("保存"));
+    connect(saveButton,SIGNAL(clicked()),this,SLOT(DownLoadFile()));
 
     connect(fileDialog,SIGNAL(currentChanged(const QString &)),this,SLOT(LinePathShow(const QString &)));
 
@@ -46,4 +50,29 @@ void DownFileDialog::LinePathShow(const QString &path)
     saveLineEdit->setText(path);
 }
 
+/* 下载文件 */
+void DownFileDialog::DownLoadFile()
+{
+    extern int   sockFd;
+    //Json格式
+    Json::Value     json;
+    json["status"] = Json::Value(8);
+    json["File"] = Json::Value(file.toStdString());
+    json["Path"] = Json::Value(filePath.toStdString());
+    json["SavePath"] = Json::Value((saveLineEdit->text()).toStdString());
 
+    //Json串
+    string     jsonBuf = json.toStyledString();
+
+    //给主服务器发送请求
+    int  ret = send(sockFd,jsonBuf.c_str(),strlen(jsonBuf.c_str()),0);
+    if(ret<0)
+    {
+        QMessageBox  messageBox;
+        messageBox.setText(tr("请求失败！"));
+        cout<<"请求失败\n";
+        messageBox.show();
+        return;
+    }
+    cout<<"已发送请求\n";
+}

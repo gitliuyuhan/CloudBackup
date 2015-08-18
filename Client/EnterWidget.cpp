@@ -9,6 +9,8 @@
 #include"enterwidget.h"
 
 #include<QVBoxLayout>
+#include<QMessageBox>
+#include<QDebug>
 
 EnterWidget::EnterWidget(QWidget* parent):QWidget(parent)
 {
@@ -20,6 +22,7 @@ EnterWidget::EnterWidget(QWidget* parent):QWidget(parent)
 //    loginButton->setFlat(true);
     loginButton->setFont(font);
     connect(loginButton,SIGNAL(clicked()),this,SLOT(ShowLoginWidget()));
+
     sendFileButton = new QPushButton(tr("发送文件"));
     sendFileButton->setFont(font);
     sendFileButton->setStyleSheet("max-width: 150;min-width: 150;color: white;");
@@ -63,11 +66,13 @@ EnterWidget::EnterWidget(QWidget* parent):QWidget(parent)
     loginWidget->setAutoFillBackground(true); 
     mainSplitter->show();
 
-    connect(loginWidget,SIGNAL(LoginOk()),mainSplitter,SLOT(close()));
+    connect(loginWidget,SIGNAL(LoginClose()),mainSplitter,SLOT(close()));
 }
 
 /* 显示登录窗口 */
 void EnterWidget::ShowLoginWidget()
 {
+    qDebug("show");
     loginWidget->setHidden(false);
 }
+

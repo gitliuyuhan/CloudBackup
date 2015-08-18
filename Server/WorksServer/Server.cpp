@@ -24,7 +24,7 @@
 #include <fcntl.h>
 
 
-/* constructor */
+/* constructor  */
 workServer::
 workServer(std::string m_ip, int m_port, std::string l_ip, int l_port):
     ip(m_ip), port(m_port), threadpool(10), loadClient(l_ip, l_port)
@@ -195,7 +195,9 @@ Run()
                 {
                     if(!value["mark"].isNull())
                     {
+                        /* obtain mark */
                         mark = value["mark"].asInt();
+                        /* obtain file md5 */
                         md5 = value["md5"].asString();
                         std::cout << mark << " " << md5 << std::endl; 
                     }
@@ -204,12 +206,14 @@ Run()
                 /* judge mark */
                 if(mark == 1)
                 {
+                    std::cout << "准备开始上传啦" << std::endl;
                     /* download */
                     Handler hand = std::make_tuple(workServer::handler_download, sockfd, md5);
                     threadpool.AddTask(std::move(hand));
                 }else if(mark == 2)
                 {
                     /* upload */
+                    std::cout << "upload ..." << std::endl;
                     Handler hand = std::make_tuple(workServer::handler_upload, sockfd, md5);
                     threadpool.AddTask(std::move(hand));
                 }
@@ -223,13 +227,14 @@ Run()
 /* download file */
 bool
 workServer::
-handler_download(int fd, std::string json)
+handler_download(int fd, std::string md5)
 {
-    std::cout << "downdaload:" << fd << " MD:" << json << std::endl;
-    std::string filename(json);
+    std::cout << "要开始发送文件啦" << std::endl;
+    std::cout << "downdaload:" << fd << " MD:" << md5 << std::endl;
+    std::string filename(md5);
     /* sendfile transport file */
     
-    std::cout << json << std::endl;
+    std::cout << filename << std::endl;
     int r_fd = open(filename.c_str(), O_RDONLY);
     if(r_fd == -1)
     {
@@ -261,17 +266,25 @@ handler_download(int fd, std::string json)
     while(n = sendfile(fd, r_fd, &pos, st.st_size))
     {
         s += n;
-    }
-    if(n == -1)
-    {
-        perror("send file error\n");
-        exit(1);
+      //if(n == -1)
+      //{
+      //    std::cout << "sendfile error " << std::endl;
+      //    break;
+      //}
+     // pos += n;
     }
     
-    std::cout << s << " "<< st.st_size <<  std::endl;
+    if(n == -1)
+    {
+        perror("send file error");
+        exit(1);
+    }else{
+        std::cout << "send size:" << n << std::endl;
+    }
+
     if(n >= st.st_size)
     {
-        std::cout << "send file success " << json << std::endl;
+        std::cout << "send file success " << md5 << std::endl;
     }
 }
 
@@ -280,42 +293,70 @@ handler_download(int fd, std::string json)
 /* upload file */
 bool
 workServer::
-handler_upload(int fd, std::string json)
+handler_upload(int fd, std::string md5)
 {
-    std::cout << "upload:" << fd << " MD:" << json << std::endl;
-    std::string filename(json);
+    std::cout << "upload:" << fd << " MD:" << md5 << std::endl;
+    std::string filename(md5);
     
     /* open file */
     int w_fd = open(filename.c_str(), O_WRONLY | O_CREAT, 00700);
+    std::cout << "open file" << std::endl;
     if(w_fd == -1)
     {
         perror("open file error\n");
         exit(1);
     }
 
-    /* use splice zero copy transform */
-    int pipefd[2];
-    int ret = pipe(pipefd);
+    char buffer[2048];
     while(1)
     {
+        bzero(buffer, 2048);
+        int ret = recv(fd, buffer, 2048, 0);
+        if(ret == -1)
+        {
+            continue;
+        }else if(ret == 0)
+        {
+            std::cout << "success " << std::endl;
+            break;
+        }
+        std::cout << ret << std::endl;
+        write(w_fd, buffer, ret);
+    }
+
+
+/*  
+    int pipefd[2];
+    int ret = pipe(pipefd);
+    std::cout << "start upload ...." << std::endl;
+    int ret2;
+    while(1)
+    {
+        //int t = recv(fd, bf, 1000, 0);
+        //printf("t = %d\n", t);
         ret = splice(fd, NULL, pipefd[1], NULL, 32768,
                 SPLICE_F_MORE | SPLICE_F_MOVE);
+        std::cout << "recv:" << ret << std::endl;
         if(ret == 0)
         {
             break;
         }
         else if(ret == -1)
         {
-            perror("splice error\n");
-            exit(1);
+            //perror("splice error1\n");
+            continue;
+            //exit(1);
+        }else{
+            ret2 = splice(pipefd[0], NULL, w_fd, NULL, ret,
+                    SPLICE_F_MORE | SPLICE_F_MOVE);
         }
-        ret = splice(pipefd[0], NULL, w_fd, NULL, 32768,
-                SPLICE_F_MORE | SPLICE_F_MOVE);
-        if(ret == -1)
+        if(ret2 == -1)
         {
-            perror("splice error\n");
-            exit(1);
+            //perror("splice error2\n");
+            continue;
+            //exit(1);
         }
     }
+    */
 }
 

@@ -17,6 +17,11 @@ class UpFileDialog : public QFileDialog
 public:
     UpFileDialog(QFileDialog* parent=0);
     ~UpFileDialog(){}
+public slots:
+    void UpLoadFile();
+    void GetSelectedPath(const QString&);
+public:
+    QString           currentPath;
 };
 
 #endif//UPFILEDIALOG_H

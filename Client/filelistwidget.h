@@ -39,6 +39,8 @@ public slots:
 private slots:
         //设置文件名字
         void SetFileName();
+signals:
+        void EnterFolderSig(QString);
         
 public:
         //上一层或下一层目录

@@ -27,14 +27,17 @@ public:
 
 protected:
     virtual void contextMenuEvent(QContextMenuEvent*); //重写鼠标右击菜单虚函数
-    
+  
+
 private slots:
     //新建文件夹槽函数
     void NewFolderSlot();
     //文件下载保存对话框
     void ShowDownFileDialog();
-    //下载文件对话框
+    //上传文件对话框
     void ShowUpFileDialog();
+    //设置当前目录
+    void SetCurrentFolder(QString);
 
 private:
     //文件浏览类对象
@@ -53,6 +56,8 @@ private:
     QPushButton*      rootFolderButton;
     //当前目录标签
     QLabel*           currentFolderLabel;
+    //当前选中文件
+    QString           selectedFile;
 
 };
 
