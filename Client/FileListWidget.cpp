@@ -129,6 +129,7 @@ void FileListWidget::mouseDoubleClickEvent(QMouseEvent* event)
     {
         QStringList   filelist;
         filelist<<tr("图片/")<<tr("111.png")<<tr("abc.txt")<<tr("视频/");
+        emit EnterFolderSig(fileItem->text());
         this->ShowFiles(filelist);
     }
 }

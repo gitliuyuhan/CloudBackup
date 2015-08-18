@@ -9,20 +9,13 @@
 #ifndef CONNECTSERV_H
 #define CONNECTSERV_H
 
+#include"myinclude.h"
+
 #include<QString>
-
-#include<iostream>
-
-#include<sys/socket.h>
-#include<sys/types.h>
-#include<arpa/inet.h>
-#include<assert.h>
-#include<unistd.h>
-#include<string.h>
-#include<stdlib.h>
-
 
 int  ConnectServer(QString,QString);
 void closefd(int);
+int  openfile(const char*);
+int  openfile(const char* pathname,int flags);
 
 #endif//CONNECTSERV_H

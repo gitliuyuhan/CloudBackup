@@ -15,5 +15,6 @@
        <file>image/set.png</file>
        <file>image/1.jpg</file>
        <file>image/2.png</file>
+       <file>image/trans.jpg</file>
    </qresource>
 </RCC>

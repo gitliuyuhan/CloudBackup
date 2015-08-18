@@ -11,6 +11,12 @@
 
 #include<QApplication>
 #include<QTextCodec>
+#include<QString>
+
+int          sockFd = -1;
+QString      servIp;
+QString      servPort;
+QString      userName;
 
 int main(int argc,char* argv[])
 {
@@ -20,6 +26,7 @@ int main(int argc,char* argv[])
     MainWindow    *mainWindow = new MainWindow;
 
     EnterWidget   enterWidget;
+//    mainWindow->mainSplitter->show();
     
     QObject::connect(enterWidget.loginWidget,SIGNAL(LoginOk(QString,QString,int,QString,QString)),mainWindow,SLOT(ShowMainWindow(QString,QString,int,QString,QString)));
 

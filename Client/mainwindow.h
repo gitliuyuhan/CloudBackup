@@ -12,6 +12,8 @@
 #include"filewidget.h"
 #include"monitorwidget.h"
 #include"enterwidget.h"
+#include"udfilewidget.h"
+#include"myinclude.h"
 
 #include<QMainWindow>
 #include<QStackedWidget>
@@ -26,6 +28,8 @@ public:
 
 public slots:
     void ShowMainWindow(QString,QString,int,QString,QString);
+public:
+    static void* RecvThread(void* arg);
 private:
     //入口界面
     EnterWidget*      enterWidget;
@@ -33,6 +37,8 @@ private:
     FileWidget*       fileWidget;
     //文件监控
     MonitorWidget*    monitorWidget;
+    //传输列表
+    UDFileWidget*     udFileWidget;
     //项目菜单
     QListWidget*      projectMenu;
     //窗口动态切换
@@ -40,14 +46,11 @@ private:
     //主界面顶部分割窗口
     QWidget*          topWidget;
 
-    //登录用户
-    QString           userName;
+    //线程ID
+    pthread_t         thid;
 public:
     //窗口分割器
     QSplitter*        mainSplitter;
-    QString           servIp;
-    QString           servPort;
-    int               sockfd;
 };
 
 #endif//MAINWINDOW_H
