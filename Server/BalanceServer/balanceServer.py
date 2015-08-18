@@ -77,4 +77,6 @@ while 1:
         s.close()
         del message_queues[s]
 
+print 'haha'
+
 
