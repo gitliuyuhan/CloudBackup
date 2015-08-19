@@ -14,6 +14,7 @@
 #include<mysql/mysql.h>
 #include"jsoncpp-src-0.5.0/include/json/json.h"
 #include<sstream>
+#include<stdio.h>
 
 
 #define HOST "localhost"
@@ -31,21 +32,30 @@ class MyDataBase {
                 std::cout << "连接数据库发生错误!"  << std::endl;
                 return;
             }
+            std::string name = "lyh";
+            std::string sql = "select * from UserInfo = " +name;
+            mysql_real_query(&mysql , sql.c_str() , sql.length());
+            res = mysql_use_result(&mysql);
+
+            while((row = mysql_fetch_row(res)) != NULL) {
+                std::cout << row[0] <<" " << row[1] << "  " << row[2] <<"  "<<row[3]<<std::endl;
+            }
+            mysql_free_result(res);
             std::cout << "连接数据库成功!" << std::endl;
         }
         ~MyDataBase() {
+            std::cout << "exit" << std::endl;
             mysql_close(&mysql);
         }
 
         /*查询数据库  参数为sql语句*/
         void MySqlQuery(std::string & sql)  {
-        std::cout << sql <<std::endl;
-        int err = mysql_query(&mysql , "select * from UserInfo");
-        std::cout << err << std::endl;
+            std::cout << sql <<std::endl;
+            int err = mysql_query(&mysql , sql.c_str());
             if(0 != err){
                 std::cout << "Error Making Query:" << mysql_error(&mysql) << std::endl;
             } else {
-                res = mysql_store_result(&mysql);
+                res = mysql_use_result(&mysql);
             }
         }
 
@@ -53,45 +63,59 @@ class MyDataBase {
         int AccountPasswd(std::string UserName , std::string PassWord) {
             std::cout << UserName << "  " << PassWord << std::endl;
             std::string sql = "select * from UserInfo where Account=\"" + UserName+"\";";
-            MySqlQuery(sql);
+         //   MySqlQuery(sql);
+            mysql_query(&mysql , sql.c_str());
+            res = mysql_use_result(&mysql);
             while((row = mysql_fetch_row(res)) != NULL) {
                 //判断UserName和Account是否相等
                 if(UserName != row[1] || PassWord != row[2])  {
+                    mysql_free_result(res);
                     return -1;
                 }
                 else {
                     Uid = atoi(row[0]);
+                    mysql_free_result(res);
                     return 1;
                 }
             }
-            return -1;
+            mysql_free_result(res);
+            return 0;
         }
 
         /*注册用户  先判断有没有此用户*/
         int Register(std::string UserName , std::string PassWord , std::string Email)  {
-            std::string sql = "select * from UserInfo where Acount="+ UserName+";";
-            MySqlQuery(sql);
-            bool flag = false;
+            std::string sql = "select * from UserInfo where Account=\""+ UserName+"\" OR Email=\"" + Email + "\";";
+         //   MySqlQuery(sql);
+            std::cout<<sql<<std::endl;
+            mysql_query(&mysql,sql.c_str());
+            res = mysql_use_result(&mysql);
+            std::cout<<UserName<<"  "<<PassWord<<"  "<<Email<<std::endl;
             int i = 0 ;
-            while ( (row = mysql_fetch_row(res)))  {
-                if( row[0] == UserName ) {
+            while ( (row = mysql_fetch_row(res)) != NULL)  {
+                std::cout<<"开始验证用户注册信息\n";
+                if( row[1] == UserName ) {
                     std::cout << "该用户已存在" << std::endl;
-                    flag = true;
+                    mysql_free_result(res);
                     return 0;
                 }
-            }
-            if( flag == false )  {
-                sql = "insert into UserInfo(Account,Password,Email) values(" + UserName +","+PassWord+","+Email+");";
-                if( 0 == mysql_query(&mysql , sql.c_str())) {
-                    //[未完成]数据成功的log
-                    return 1;
-                }else {
-                    //[未完成]数据失败的log
-                    mysql_close(&mysql);
-                    return -1;
+                else if(row[3] == Email)
+                {
+                    std::cout<<"邮箱已被占用"<< std::endl;
+                    mysql_free_result(res);
+                    return 2;
                 }
             }
-            return 0;
+            mysql_free_result(res);
+            std::cout<<"注册信息合法\n";
+            sql = "insert into UserInfo(Account,Password,Email) values(\"" + UserName +"\",\""+PassWord+"\",\""+Email+"\");";
+            if( 0 == mysql_query(&mysql , sql.c_str())) {
+                //[未完成]数据成功的log
+                return 1;
+            }else {
+                //[未完成]数据失败的log
+                //mysql_close(&mysql);
+                return -1;
+            }
         }
         //进入目录  在数据库中查找符合条件的目录  并且将该目录下的一级文件或者目录
         std::string DirFiles(std::string dir)  {
@@ -205,14 +229,9 @@ class MyDataBase {
             return 0;
         }
         //下载文件
-        std::string DownloadFile(std::string UserFilePath)  {
-            std::string sql = "select ServerFilePath from UserFileInfo where UserFilePath="+UserFilePath+";";
+        void  DownloadFile(std::string UserFilePath)  {
+            std::string sql = "select ServerFilePath from UserFileInfo where UserFilePath=\"" + UserFilePath+"\";";
             MySqlQuery(sql);
-            std::string ServerPath;
-            while((row = mysql_fetch_row(res))) {
-                ServerPath = row[0];
-            }
-            return ServerPath;
         }
 
         //监控文件

@@ -30,6 +30,7 @@
 
 #define MaxClientConnection 2
 
+extern MyDataBase  DataBase;
 
 class Mission{
     public:
@@ -41,11 +42,32 @@ class Mission{
             std::string UserName , Passwd;
             UserName = root["UserName"].asString();
             Passwd = root["Passwd"].asString();
-           if( 1 == db[socketfd].AccountPasswd(UserName , Passwd))  {
+
+            int ret = DataBase.AccountPasswd(UserName , Passwd);
+            if(ret==1)
+            {
+                //登录成功
+                root["status"] = Json::Value(0);
+                strcpy(buf, root.toStyledString().c_str());
+                send(socketfd,buf,strlen(buf),0);
                 return 1;
             }
-
-            return -1;
+            else if(ret==0)
+            {
+                //账号错误
+                root["status"] = Json::Value(1);
+                strcpy(buf,root.toStyledString().c_str());
+                send(socketfd,buf,strlen(buf),0);
+                return 0;
+            }
+            else
+            {
+                //密码错误
+                root["status"] = Json::Value(2);
+                strcpy(buf,root.toStyledString().c_str());
+                send(socketfd,buf,strlen(buf),0);
+                return -1;
+            }
         }
 
         //注册用户
@@ -55,17 +77,40 @@ class Mission{
             Passwd = root["Passwd"].asString();
             Email = root["Email"].asString();
 
-            if(1 == db[socketfd].Register(UserName , Passwd , Email))  {
+            int ret = DataBase.Register(UserName , Passwd , Email);
+            std::cout<<"ret="<<ret<<std::endl;
+            if(ret==1)
+            {
+                //注册成功
+                root["status"] = Json::Value(0);
+                strcpy(buf, root.toStyledString().c_str());
+                send(socketfd,buf,strlen(buf),0);
                 return 1;
             }
-            return -1;
+            else if(ret==0)
+            {
+                //用户已存在
+                root["status"] = Json::Value(1);
+                strcpy(buf,root.toStyledString().c_str());
+                send(socketfd,buf,strlen(buf),0);
+                return 0;
+            }
+            else
+            {
+                //邮箱已被占用
+                root["status"] = Json::Value(2);
+                strcpy(buf,root.toStyledString().c_str());
+                send(socketfd,buf,strlen(buf),0);
+                return 2;
+            }
+
         }
 
         //进入目录
         std::string DirFiles(Json::Value root , int & socketfd)  {
             std::string AimDir , AllFiles;
             AimDir = root["UserFilePath"].asString();
-            AllFiles = db[socketfd].DirFiles(AimDir);
+            AllFiles = DataBase.DirFiles(AimDir);
 
             return AllFiles;
         }
@@ -73,7 +118,7 @@ class Mission{
         int CreateNewDir(Json::Value root , int &  socketfd) {
             std::string DirName;
             DirName = root["UserFilePath"].asString();
-            if( 1 ==db[socketfd].CreateNewDir(DirName)) {
+            if( 1 ==DataBase.CreateNewDir(DirName)) {
                 return 1;
             }
             return -1;
@@ -83,7 +128,7 @@ class Mission{
             std::string OldName , NewName;
             OldName = root["OldName"].asString();
             NewName = root["NewName"].asString();
-            if( 1 == db[socketfd].RenameFileName(OldName , NewName)) {
+            if( 1 == DataBase.RenameFileName(OldName , NewName)) {
                 return 1;
             }
             return -1;
@@ -92,7 +137,7 @@ class Mission{
         int DeleteFileORDir(Json::Value root , int & socketfd)  {
             std::string File;
             File = root["UserFilePath"].asString();
-            if( 1 == db[socketfd].DeleteFileORDir(File))  {
+            if( 1 == DataBase.DeleteFileORDir(File))  {
                 return 1;
             }
             return -1;
@@ -108,7 +153,7 @@ class Mission{
             MD5 = root["MD5"].asString();
             flag = root["flag"].asInt();
 
-            if(1 == db[socketfd].UploadFile(UserFilePath , UserFileSize , ServerFilePath , MD5 , flag))  {
+            if(1 == DataBase.UploadFile(UserFilePath , UserFileSize , ServerFilePath , MD5 , flag))  {
                 return 1;
             }
             return -1;
@@ -116,13 +161,19 @@ class Mission{
 
         //下载文件
         void DownloadFile(Json::Value root , int & socketfd)  {
-            Json::Value croot;
-            std::string UserFilePath , ServerFilePath;
-            UserFilePath = root["UserFilePath"].asString();
-            ServerFilePath = db[socketfd].DownloadFile(UserFilePath);
-            croot["PATH"] = ServerFilePath;
+
+            std::string UserFilePath , ServerFilePath , FileSize,FileMd5;
+            UserFilePath = root["Path"].asString();
+            DataBase.DownloadFile(UserFilePath);
+
+            while((row = mysql_fetch_row(res))!=NULL)
+            {
+                ServerFilePath = row[2];  //用户文件路径
+                FileSize = row[3];  //用户文件大小
+                FileMd5 = row[6];   //文件md5
+            }
             //给客户端发过去
-            std::string s = croot.toStyledString();
+            std::string s = root.toStyledString();
             const char * buf = s.c_str();
             send(socketfd , (void *)buf , sizeof(buf) , 0);
         }
@@ -137,7 +188,7 @@ class Mission{
             MD5 = root["MD5"].asString();
             flag = root["flag"].asInt();
 
-            if( true == db[socketfd].MonitorFile(UserFileSize , UserFileSize , ServerFilePath , MD5 , flag))  {
+            if( true == DataBase.MonitorFile(UserFileSize , UserFileSize , ServerFilePath , MD5 , flag))  {
                 return 1;
             }
             return -1;
@@ -148,7 +199,7 @@ class Mission{
             Json::Value croot;
             std::string UserFilePath , ServerFilePath;
             UserFilePath = root["UserFilePath"].asString();
-            ServerFilePath = db[socketfd].DownloadFile(UserFilePath);
+            ServerFilePath = DataBase.DownloadFile(UserFilePath);
             croot["PATH"] = ServerFilePath;
             //给客户端发过去
             std::string s = croot.toStyledString();
@@ -180,7 +231,7 @@ class Mission{
             }
         }
     public:
-        MyDataBase db[MaxClientConnection];
+//        MyDataBase db[MaxClientConnection];
         char buf[512];
         int socketfd;
 };
