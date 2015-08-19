@@ -28,6 +28,8 @@
 #include"Mission.cpp"
 #include"ThreadPool.hpp"
 
+#define MaxClientConnection 2
+
 template<typename T>
 void RecvFromClient( Epoll & e , const int & socketfd , ThreadPool<T> & pool , Mission  mission[MaxClientConnection]) {
     char buf[TCP_BUFFER_SIZE];
@@ -47,7 +49,7 @@ void RecvFromClient( Epoll & e , const int & socketfd , ThreadPool<T> & pool , M
         else{
             //判断用户的行为
             //UserRequest(buf,socketfd);
-            mission[socketfd].buf = buf;
+            strcpy(mission[socketfd].buf,buf);
             mission[socketfd].socketfd = socketfd;
             pool.AddTask(mission[socketfd]);
         }
@@ -84,9 +86,13 @@ void EpollMission( Epoll & e , ThreadPool<T> & pool ,char * ip , char * port , M
 }
 
 int main( int argc , char * argv[] )  {
+    if(argc < 3) {
+        std::cout << "参数错误!" << std::endl;
+        exit(0);
+    }
     pthread_t EpollThreadID;
-    Mission mission[MaxClientConnection];
-    ThreadPool<Mission> pool(8);
+    Mission * mission = new Mission[MaxClientConnection];
+    ThreadPool<Mission> pool(1);
 
     Epoll e(argv[1] , argv[2]);
     EpollMission(e , pool ,argv[1] , argv[2] , mission);

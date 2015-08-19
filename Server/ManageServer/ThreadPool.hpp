@@ -25,6 +25,7 @@
 #include<mutex>
 #include<condition_variable>
 #include<atomic>
+#include<stdio.h>
 
 const int MaxTaskCount = 1000;
 template<typename T>
@@ -47,7 +48,10 @@ class SyncQueue{
             if( m_stop ) {
                 return;
             }
-            list = std::move(m_queue);
+            list = m_queue;
+            for(int i = 0 ; i < list.size() ; i++)  {
+                m_queue.pop_back();
+            }
             m_notFull.notify_one();
         }
 
@@ -117,7 +121,7 @@ class SyncQueue{
             m_queue.push_back(std::forward<F>(x));
             m_notEmpty.notify_one();
         }
-
+    public:
         std::list<T> m_queue;
         std::mutex m_mutex;
         std::condition_variable m_notEmpty;
@@ -166,7 +170,6 @@ class ThreadPool{
         void StopThreadGroup()  {
             m_queue.Stop();
             m_running = false;
-
             for( auto thread : m_ThreadGroup )  {
                 if(thread)  {
                     thread->join();
