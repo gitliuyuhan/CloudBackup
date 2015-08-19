@@ -30,6 +30,8 @@
 
 #define MaxClientConnection 2
 
+MyDataBase        DataBase;
+
 template<typename T>
 void RecvFromClient( Epoll & e , const int & socketfd , ThreadPool<T> & pool , Mission  mission[MaxClientConnection]) {
     char buf[TCP_BUFFER_SIZE];
@@ -90,6 +92,7 @@ int main( int argc , char * argv[] )  {
         std::cout << "参数错误!" << std::endl;
         exit(0);
     }
+
     pthread_t EpollThreadID;
     Mission * mission = new Mission[MaxClientConnection];
     ThreadPool<Mission> pool(1);
