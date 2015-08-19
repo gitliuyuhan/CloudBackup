@@ -229,9 +229,10 @@ class MyDataBase {
             return 0;
         }
         //下载文件
-        void  DownloadFile(std::string UserFilePath)  {
-            std::string sql = "select ServerFilePath from UserFileInfo where UserFilePath=\"" + UserFilePath+"\";";
+        MYSQL_RES*   DownloadFile(std::string UserFilePath)  {
+            std::string sql = "select * from UserFileInfo where UserFilePath=\"" + UserFilePath+"\";";
             MySqlQuery(sql);
+            return res;
         }
 
         //监控文件
@@ -245,7 +246,8 @@ class MyDataBase {
 
         //恢复文件
         std::string RestoreFile(std::string UserFilePath)  {
-            std::string temp = DownloadFile(UserFilePath);
+//            std::string temp = DownloadFile(UserFilePath);
+             std::string   temp; //暂时并没有什么卵用
             return temp;
         }
     private:

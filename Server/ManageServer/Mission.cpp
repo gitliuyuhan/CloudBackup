@@ -29,6 +29,7 @@
 #include"MyDataBase.cpp"
 
 #define MaxClientConnection 2
+#define WORKPORT            6000
 
 extern MyDataBase  DataBase;
 
@@ -164,18 +165,28 @@ class Mission{
 
             std::string UserFilePath , ServerFilePath , FileSize,FileMd5;
             UserFilePath = root["Path"].asString();
-            DataBase.DownloadFile(UserFilePath);
+
+            MYSQL_RES*    res;
+            MYSQL_ROW     row;
+            res = DataBase.DownloadFile(UserFilePath);
 
             while((row = mysql_fetch_row(res))!=NULL)
             {
-                ServerFilePath = row[2];  //用户文件路径
+                ServerFilePath = row[2];  //服务器文件路径
                 FileSize = row[3];  //用户文件大小
                 FileMd5 = row[6];   //文件md5
+                break;
             }
+            mysql_free_result(res);
+            root["Files"] = Json::Value(ServerFilePath);
+            root["Port"] = Json::Value(WORKPORT); //子服务器端口
+            root["Size"] = Json::Value(FileSize);
+            root["Md5"] = Json::Value(FileMd5);
+
+            strcpy(buf,root.toStyledString().c_str());
+
             //给客户端发过去
-            std::string s = root.toStyledString();
-            const char * buf = s.c_str();
-            send(socketfd , (void *)buf , sizeof(buf) , 0);
+            send(socketfd , buf , strlen(buf) , 0);
         }
 
         //监控文件
@@ -199,7 +210,7 @@ class Mission{
             Json::Value croot;
             std::string UserFilePath , ServerFilePath;
             UserFilePath = root["UserFilePath"].asString();
-            ServerFilePath = DataBase.DownloadFile(UserFilePath);
+  //          ServerFilePath = DataBase.DownloadFile(UserFilePath);
             croot["PATH"] = ServerFilePath;
             //给客户端发过去
             std::string s = croot.toStyledString();
