@@ -28,7 +28,7 @@
 #include"jsoncpp-src-0.5.0/include/json/json.h"
 #include"MyDataBase.cpp"
 
-#define MaxClientConnection 1000
+#define MaxClientConnection 2
 
 
 class Mission{
@@ -41,9 +41,10 @@ class Mission{
             std::string UserName , Passwd;
             UserName = root["UserName"].asString();
             Passwd = root["Passwd"].asString();
-            if( 1 == db[socketfd].AccountPasswd(UserName , Passwd))  {
+           if( 1 == db[socketfd].AccountPasswd(UserName , Passwd))  {
                 return 1;
             }
+
             return -1;
         }
 
@@ -164,7 +165,6 @@ class Mission{
             if(reader.parse(buf,root))  {
                 status = root["status"].asInt();
             }
-
             switch (status)
             {
                 case 1:AccountPasswd(root , socketfd);break;
@@ -181,6 +181,6 @@ class Mission{
         }
     public:
         MyDataBase db[MaxClientConnection];
-        std::string buf;
+        char buf[512];
         int socketfd;
 };

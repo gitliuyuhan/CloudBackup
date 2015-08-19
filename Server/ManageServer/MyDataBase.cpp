@@ -13,21 +13,13 @@
 #include<cerrno>
 #include<mysql/mysql.h>
 #include"jsoncpp-src-0.5.0/include/json/json.h"
-#include<mysql_driver.h>
-#include<mysql_connection.h>
 #include<sstream>
-
-#include <cppconn/driver.h>
-#include <cppconn/statement.h>
-#include <cppconn/prepared_statement.h>
-#include <cppconn/resultset.h>
-#include <exception>
 
 
 #define HOST "localhost"
-#define DATABASE ""
-#define USER ""
-#define PASSWD ""
+#define DATABASE "CloudBackup"
+#define USER "root"
+#define PASSWD "lewin123"
 #define PORT 3306
 
 class MyDataBase {
@@ -47,8 +39,10 @@ class MyDataBase {
 
         /*查询数据库  参数为sql语句*/
         void MySqlQuery(std::string & sql)  {
-            const char * sqls = sql.c_str();
-            if( mysql_real_query(&mysql , sqls , sql.length())) {
+        std::cout << sql <<std::endl;
+        int err = mysql_query(&mysql , "select * from UserInfo");
+        std::cout << err << std::endl;
+            if(0 != err){
                 std::cout << "Error Making Query:" << mysql_error(&mysql) << std::endl;
             } else {
                 res = mysql_store_result(&mysql);
@@ -57,9 +51,10 @@ class MyDataBase {
 
         /*验证账户和密码 返回-1代表登录失败 1为登录成功*/
         int AccountPasswd(std::string UserName , std::string PassWord) {
-            std::string sql = "select * from UserInfo where Acount=" + UserName+";";
+            std::cout << UserName << "  " << PassWord << std::endl;
+            std::string sql = "select * from UserInfo where Account=\"" + UserName+"\";";
             MySqlQuery(sql);
-            while(row == mysql_fetch_row(res)) {
+            while((row = mysql_fetch_row(res)) != NULL) {
                 //判断UserName和Account是否相等
                 if(UserName != row[1] || PassWord != row[2])  {
                     return -1;
@@ -74,7 +69,7 @@ class MyDataBase {
 
         /*注册用户  先判断有没有此用户*/
         int Register(std::string UserName , std::string PassWord , std::string Email)  {
-            std::string sql = "select * from UserInfo where Acount=" + UserName+";";
+            std::string sql = "select * from UserInfo where Acount="+ UserName+";";
             MySqlQuery(sql);
             bool flag = false;
             int i = 0 ;
