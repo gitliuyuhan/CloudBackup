@@ -20,7 +20,7 @@
 #define HOST "localhost"
 #define DATABASE "CloudBackup"
 #define USER "root"
-#define PASSWD "lewin123"
+#define PASSWD "liuyuhan"
 #define PORT 3306
 
 class MyDataBase {
@@ -33,9 +33,9 @@ class MyDataBase {
                 return;
             }
             std::string name = "lyh";
-            std::string sql = "select * from UserInfo = " +name;
+            std::string sql = "select * from UserInfo where Accound = \"" +name+"\"";
             mysql_real_query(&mysql , sql.c_str() , sql.length());
-            res = mysql_use_result(&mysql);
+            res = mysql_store_result(&mysql);
 
             while((row = mysql_fetch_row(res)) != NULL) {
                 std::cout << row[0] <<" " << row[1] << "  " << row[2] <<"  "<<row[3]<<std::endl;
@@ -63,10 +63,12 @@ class MyDataBase {
         /*验证账户和密码 返回-1代表登录失败 1为登录成功*/
         int AccountPasswd(std::string UserName , std::string PassWord) {
             std::cout << UserName << "  " << PassWord << std::endl;
-            std::string sql = "select * from UserInfo where Account=\"" + UserName+"\";";
+            std::string sql = "select * from UserInfo where Accound=\"" + UserName+"\"";
          //   MySqlQuery(sql);
-            mysql_query(&mysql , sql.c_str());
-            res = mysql_use_result(&mysql);
+            std::cout<<sql<<std::endl;
+            std::cout<<mysql_real_query(&mysql , sql.c_str(),sql.length());
+            res = mysql_store_result(&mysql);
+            printf("res= %p\n",res);
             while((row = mysql_fetch_row(res)) != NULL) {
                 //判断UserName和Account是否相等
                 if(UserName != row[1] || PassWord != row[2])  {
@@ -85,13 +87,15 @@ class MyDataBase {
 
         /*注册用户  先判断有没有此用户*/
         int Register(std::string UserName , std::string PassWord , std::string Email)  {
-            std::string sql = "select * from UserInfo where Account=\""+ UserName+"\" OR Email=\"" + Email + "\";";
+            std::string sql = "select * from UserInfo where Accound=\""+ UserName+"\" OR Email=\"" + Email + "\";";
          //   MySqlQuery(sql);
             std::cout<<sql<<std::endl;
             mysql_query(&mysql,sql.c_str());
-            res = mysql_use_result(&mysql);
+            printf("res1 = %p\n",res);
+            res = mysql_store_result(&mysql);
             std::cout<<UserName<<"  "<<PassWord<<"  "<<Email<<std::endl;
             int i = 0 ;
+            printf("res& = %p\n",res);
             while ( (row = mysql_fetch_row(res)) != NULL)  {
                 std::cout<<"开始验证用户注册信息\n";
                 if( row[1] == UserName ) {
@@ -108,7 +112,7 @@ class MyDataBase {
             }
             mysql_free_result(res);
             std::cout<<"注册信息合法\n";
-            sql = "insert into UserInfo(Account,Password,Email) values(\"" + UserName +"\",\""+PassWord+"\",\""+Email+"\");";
+            sql = "insert into UserInfo(Accound,Password,Email) values(\"" + UserName +"\",\""+PassWord+"\",\""+Email+"\");";
             if( 0 == mysql_query(&mysql , sql.c_str())) {
                 //[未完成]数据成功的log
                 return 1;

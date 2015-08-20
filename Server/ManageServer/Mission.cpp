@@ -29,7 +29,7 @@
 #include"MyDataBase.cpp"
 
 #define MaxClientConnection 2
-#define WORKPORT            6000
+#define WORKPORT            "6000"
 
 extern MyDataBase  DataBase;
 
