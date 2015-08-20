@@ -169,10 +169,10 @@ class Mission{
             MYSQL_RES*    res;
             MYSQL_ROW     row;
             res = DataBase.DownloadFile(UserFilePath);
-
+            printf("res 2 =%p\n",res);
             while((row = mysql_fetch_row(res))!=NULL)
             {
-                ServerFilePath = row[2];  //服务器文件路径
+                ServerFilePath = row[5];  //服务器文件路径
                 FileSize = row[3];  //用户文件大小
                 FileMd5 = row[6];   //文件md5
                 break;
@@ -184,7 +184,7 @@ class Mission{
             root["Md5"] = Json::Value(FileMd5);
 
             strcpy(buf,root.toStyledString().c_str());
-
+            std::cout<<buf<<std::endl;
             //给客户端发过去
             send(socketfd , buf , strlen(buf) , 0);
         }

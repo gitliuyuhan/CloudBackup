@@ -56,6 +56,7 @@ class MyDataBase {
                 std::cout << "Error Making Query:" << mysql_error(&mysql) << std::endl;
             } else {
                 res = mysql_use_result(&mysql);
+                printf("res &= %p\n",res);
             }
         }
 
@@ -230,7 +231,7 @@ class MyDataBase {
         }
         //下载文件
         MYSQL_RES*   DownloadFile(std::string UserFilePath)  {
-            std::string sql = "select * from UserFileInfo where UserFilePath=\"" + UserFilePath+"\";";
+            std::string sql = "select * from UserFileInfo where UserFilePath =\"" + UserFilePath+"\";";
             MySqlQuery(sql);
             return res;
         }
