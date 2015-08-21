@@ -7,6 +7,7 @@
  ************************************************************************/
 
 #include<iostream>
+#include<array>
 #include<string>
 #include<cstdlib>
 #include<cerrno>
@@ -28,8 +29,9 @@
 #include"jsoncpp-src-0.5.0/include/json/json.h"
 #include"MyDataBase.cpp"
 
+//#define SIZE                1000
 #define MaxClientConnection 2
-#define WORKPORT            "6000"
+#define WORKPORT            "6001"
 
 extern MyDataBase  DataBase;
 extern std::string WorkIp;
@@ -37,19 +39,29 @@ extern std::string WorkPort;
 
 class Mission{
     public:
-        Mission(){}
-        ~Mission() {}
+        Mission()
+        {}
+        ~Mission() 
+        {
+            std::cout<<"该任务销毁\n";
+        }
+
+        void MissionInit(int sock)
+        {
+            socketfd = sock;
+            Uid = Users[socketfd];
+        }
 
         //验证账户密码任务
         int AccountPasswd(Json::Value & root , int & socketfd) {
             std::string UserName , Passwd;
             UserName = root["UserName"].asString();
             Passwd = root["Passwd"].asString();
-
             int ret = DataBase.AccountPasswd(UserName , Passwd);
             if(ret >= 1)
             {
                 //登录成功
+                Users[socketfd] = ret;
                 Uid = ret;
                 std::cout<<"log Uid:"<<Uid<<std::endl;
                 root["status"] = Json::Value(0);
@@ -158,12 +170,23 @@ class Mission{
             std::string::size_type    position;
             position = FilePath.find_last_of("/");
             File = FilePath.substr(position+1,FilePath.length());
+
             MD5 = root["Md5"].asString();
+            int   have = root["Have"].asInt();
 
             //上传到客户端的路径
             UserFilePath = root["Path"].asString() + File;
 
-            int ret = DataBase.UploadFile(MD5,UserFilePath,Uid);
+            std::string      UserFileSize;
+            std::string      ServIp;
+            if(have == 1)
+            {
+                UserFileSize = root["Size"].asString();
+                ServIp = root["Ip"].asString();
+            }
+
+
+            int ret = DataBase.UploadFile(MD5,UserFilePath,Uid,ServIp,UserFileSize,have);
             if(ret == 1)
             {
                 //秒传
@@ -182,13 +205,17 @@ class Mission{
                 send(socketfd,buf,strlen(buf),0);
                 return 0;
             }
+            else if(ret == 2)
+            {
+                return 2;
+            }
             return -1;
         }
 
         //下载文件
         void DownloadFile(Json::Value root , int & socketfd)  {
 
-            std::string UserFilePath , ServerFilePath , FileSize,FileMd5;
+            std::string UserFilePath , ServerIp , FileSize,FileMd5;
             UserFilePath = root["Path"].asString();
 
             MYSQL_RES*    res;
@@ -197,13 +224,13 @@ class Mission{
             printf("res 2 =%p\n",res);
             while((row = mysql_fetch_row(res))!=NULL)
             {
-                ServerFilePath = row[5];  //服务器文件路径
+                ServerIp = row[5];  //服务器文件路径
                 FileSize = row[3];  //用户文件大小
                 FileMd5 = row[6];   //文件md5
                 break;
             }
             mysql_free_result(res);
-            root["Files"] = Json::Value(ServerFilePath);
+            root["Ip"] = Json::Value(ServerIp);   //子服务器Ip
             root["Port"] = Json::Value(WORKPORT); //子服务器端口
             root["Size"] = Json::Value(FileSize);
             root["Md5"] = Json::Value(FileMd5);
@@ -271,4 +298,7 @@ class Mission{
         char    buf[512];
         int     socketfd;
         int     Uid;      // 用户数据库ID
+    private:
+        static int Users[];  //保存登录用户的ID
 };
+

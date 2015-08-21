@@ -201,7 +201,18 @@ class MyDataBase {
         }
 
         //上传文件
-        int UploadFile(std::string MD5,std::string UserFilePath,int uid)  {
+        int UploadFile(std::string MD5,std::string UserFilePath,int uid,std::string ServIp,std::string FileSize,int have)  {
+            char     sqlbuf[1024];
+            if( have == 1)
+            {  
+                sprintf(sqlbuf,"insert into UserFileInfo(Uid,UserFilePath,UserFileSize,ServerIp,MD5,Flag) values('%d','%s','%s','%s','%s','%d')",uid,UserFilePath.c_str(),FileSize.c_str(),ServIp.c_str(),MD5.c_str(),1);
+                mysql_real_query(&mysql,sqlbuf,strlen(sqlbuf));
+                memset(sqlbuf,'\0',sizeof(sqlbuf));
+                sprintf(sqlbuf,"insert into MD5Info(MD5) values('%s')",MD5.c_str());
+                mysql_real_query(&mysql,sqlbuf,strlen(sqlbuf));
+                return 2;
+            }
+
             std::cout<<"uid="<<uid<<std::endl;
             //查询Md5是否存在
             std::string sql = "select MD5 from MD5Info where MD5 = \""+MD5+"\"";
@@ -219,7 +230,7 @@ class MyDataBase {
                 std::cout<<"Md5 引用计数增加失败\n";
                 return -1;
             }
-            sql = "select ServerFilePath,UserFileSize  from UserFileInfo where MD5 = \"" + MD5 + "\"";
+            sql = "select ServerIp,UserFileSize  from UserFileInfo where MD5 = \"" + MD5 + "\"";
             MySqlQuery(sql);
             row = mysql_fetch_row(res);
             std::string  spath = row[0];
@@ -228,8 +239,7 @@ class MyDataBase {
             mysql_free_result(res);
 
             //添加一条数据
-            char   sqlbuf[1024];
-            sprintf(sqlbuf,"insert into UserFileInfo(Uid,UserFilePath,UserFileSize,ServerFilePath,MD5,Flag) values('%d','%s','%s','%s','%s','%d')",uid,UserFilePath.c_str(),UserFileSize.c_str(),spath.c_str(),MD5.c_str(),1);
+            sprintf(sqlbuf,"insert into UserFileInfo(Uid,UserFilePath,UserFileSize,ServerIp,MD5,Flag) values('%d','%s','%s','%s','%s','%d')",uid,UserFilePath.c_str(),UserFileSize.c_str(),spath.c_str(),MD5.c_str(),1);
             if(mysql_real_query(&mysql,sqlbuf,strlen(sqlbuf)) != 0)
             {
                 std::cout<<"文件信息添加失败\n";
