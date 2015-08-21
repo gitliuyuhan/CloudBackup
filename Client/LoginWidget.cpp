@@ -229,8 +229,10 @@ void LoginWidget::SetServDialog()
 {
     QLabel*       ipLabel = new QLabel(tr("IP："));
     this->ipLineEdit = new QLineEdit;
+    ipLineEdit->setText(servIp);
     QLabel*       portLabel = new QLabel(tr("端口："));
     this->portLineEdit = new QLineEdit;
+    portLineEdit->setText(servPort);
     portLineEdit->setStyleSheet("max-width: 60;");
     QPushButton*  okButton = new QPushButton(tr("保存"));
     QPushButton*  cancelButton = new QPushButton(tr("取消"));

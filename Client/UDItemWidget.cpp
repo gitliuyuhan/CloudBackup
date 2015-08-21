@@ -89,6 +89,13 @@ void UDItemWidget::EmitProBarValue(float value,float t)
 //设置进度条范围
 void UDItemWidget::SetProBarRange(int start,float sum,int base)
 {
+    if(base == 0)
+    {
+        proBar->setRange(0,100);
+        proBar->setValue(100);
+        rateLabel->setText("");
+        return;
+    }
     proBar->setRange(start,(int)sum);
     switch(base)
     {

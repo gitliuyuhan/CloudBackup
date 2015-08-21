@@ -21,7 +21,8 @@ public slots:
     void UpLoadFile();
     void GetSelectedPath(const QString&);
 public:
-    QString           currentPath;
+    QString           currentPath;    //选中的文件路径
+    QString           clientPath;     //客户端上传路径
 };
 
 #endif//UPFILEDIALOG_H

@@ -107,6 +107,9 @@ void FileWidget::ShowDownFileDialog()
 void FileWidget::ShowUpFileDialog()
 {
     UpFileDialog*     upDialog = new UpFileDialog;
+    QString str = currentFolderLabel->text();
+    str.replace("> ","");
+    upDialog->clientPath = str;
     upDialog->show();
 }
 
