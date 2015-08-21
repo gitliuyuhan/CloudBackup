@@ -51,11 +51,11 @@ class MyDataBase {
         /*查询数据库  参数为sql语句*/
         void MySqlQuery(std::string & sql)  {
             std::cout << sql <<std::endl;
-            int err = mysql_query(&mysql , sql.c_str());
+            int err = mysql_real_query(&mysql , sql.c_str(),sql.length());
             if(0 != err){
                 std::cout << "Error Making Query:" << mysql_error(&mysql) << std::endl;
             } else {
-                res = mysql_use_result(&mysql);
+                res = mysql_store_result(&mysql);
                 printf("res &= %p\n",res);
             }
         }
@@ -76,9 +76,9 @@ class MyDataBase {
                     return -1;
                 }
                 else {
-                    Uid = atoi(row[0]);
                     mysql_free_result(res);
-                    return 1;
+                    std::cout<<"Uid="<<atoi(row[0])<<std::endl;
+                    return atoi(row[0]);
                 }
             }
             mysql_free_result(res);
@@ -201,37 +201,45 @@ class MyDataBase {
         }
 
         //上传文件
-        int UploadFile(std::string UserFilePath , std::string UserFileSize , std::string ServerFilePath , std::string MD5 , int flag)  {
-            std::string sql = "select MD5 from UserFileInfo where UserFilePath="+UserFilePath+");";
+        int UploadFile(std::string MD5,std::string UserFilePath,int uid)  {
+            std::cout<<"uid="<<uid<<std::endl;
+            //查询Md5是否存在
+            std::string sql = "select MD5 from MD5Info where MD5 = \""+MD5+"\"";
             MySqlQuery(sql);
             row = mysql_fetch_row(res);
-            std::string str = row[0];
-            sql = "select * from MD5 where MD5="+str+";";
-            MySqlQuery(sql);
-            int i = 1;
-            while((row = mysql_fetch_row(res))) {
-                int temp = atoi(row[0]);
-                if( i%3 == 0 && temp >= 1)  {
-                    std::ostringstream string;
-                    string << temp+1;
-                    std::string ss(string.str());
-                    sql = "update MD5 set ReferCount="+ss+"where MD5="+str+";";
-                    mysql_query(&mysql , sql.c_str());
-                }else {
-                    std::ostringstream string;
-                    string << Uid;
-                    std::string uid = string.str();
-                    string << flag;
-                    std::string f = string.str();
-
-                    std::string sql = "insert into UserFileInfo(Uid , UserFilePath , UserFileSize , ServerFilePath , MD5 , Flag) values("+uid+","+UserFileSize+","+UserFileSize+","+ServerFilePath+","+MD5+","+f+");";
-                    if( 0 != mysql_query(&mysql , sql.c_str()))  {
-                        return -1;
-                    }
-                    return 1;
-                }
+            if(row == NULL)
+            {
+                mysql_free_result(res);
+                return 0;  //文件不存在
             }
-            return 0;
+            mysql_free_result(res);
+            sql = "update MD5Info set Count = Count+1 where MD5 = \"" + MD5 + "\"";
+            if(mysql_real_query(&mysql,sql.c_str(),sql.length()) != 0)
+            {
+                std::cout<<"Md5 引用计数增加失败\n";
+                return -1;
+            }
+            sql = "select ServerFilePath,UserFileSize  from UserFileInfo where MD5 = \"" + MD5 + "\"";
+            MySqlQuery(sql);
+            row = mysql_fetch_row(res);
+            std::string  spath = row[0];
+            std::string  UserFileSize = row[1];
+            std::cout<<"spath:"<<spath<<"   "<<"UserFileSize:"<<UserFileSize<<std::endl;
+            mysql_free_result(res);
+
+            //添加一条数据
+            char   sqlbuf[1024];
+            sprintf(sqlbuf,"insert into UserFileInfo(Uid,UserFilePath,UserFileSize,ServerFilePath,MD5,Flag) values('%d','%s','%s','%s','%s','%d')",uid,UserFilePath.c_str(),UserFileSize.c_str(),spath.c_str(),MD5.c_str(),1);
+            if(mysql_real_query(&mysql,sqlbuf,strlen(sqlbuf)) != 0)
+            {
+                std::cout<<"文件信息添加失败\n";
+                sql = "update MD5Info set Count = Count-1 where MD5 = \"" + MD5 + "\"";
+                mysql_real_query(&mysql,sql.c_str(),sql.length());
+                return -1;
+            }
+            std::cout<<"文件信息添加成功\n";
+            return 1;
+
         }
         //下载文件
         MYSQL_RES*   DownloadFile(std::string UserFilePath)  {
@@ -242,7 +250,8 @@ class MyDataBase {
 
         //监控文件
         int MonitorFile(std::string UserFilePath , std::string UserFileSize , std::string ServerFilePath , std::string MD5 , int flag)  {
-            int Flag = UploadFile(UserFilePath , UserFileSize , ServerFilePath , MD5 , flag);
+  //          int Flag = UploadFile(UserFilePath , UserFileSize , ServerFilePath , MD5 , flag);
+            int  Flag;   //临时添加
             if( 1 == Flag )   {
                 return true;
             }
@@ -259,6 +268,6 @@ class MyDataBase {
         MYSQL mysql;  //连接数据库的变量
         MYSQL_RES *res;  //存放查询结果的变量
         MYSQL_ROW row;
-        int Uid;  //用户ID
+        int       Uid;
 };
 

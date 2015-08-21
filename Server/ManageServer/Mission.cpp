@@ -32,6 +32,8 @@
 #define WORKPORT            "6000"
 
 extern MyDataBase  DataBase;
+extern std::string WorkIp;
+extern std::string WorkPort;
 
 class Mission{
     public:
@@ -45,9 +47,11 @@ class Mission{
             Passwd = root["Passwd"].asString();
 
             int ret = DataBase.AccountPasswd(UserName , Passwd);
-            if(ret==1)
+            if(ret >= 1)
             {
                 //登录成功
+                Uid = ret;
+                std::cout<<"log Uid:"<<Uid<<std::endl;
                 root["status"] = Json::Value(0);
                 strcpy(buf, root.toStyledString().c_str());
                 send(socketfd,buf,strlen(buf),0);
@@ -146,16 +150,37 @@ class Mission{
 
         //上传文件
         int UploadFile(Json::Value root , int & socketfd)  {
-            std::string UserFilePath , UserFileSize , ServerFilePath , MD5;
-            int flag;
-            UserFilePath = root["UserFilePath"].asString();
-            UserFileSize = root["UserFileSize"].asString();
-            ServerFilePath = root["ServerFilePath"].asString();
-            MD5 = root["MD5"].asString();
-            flag = root["flag"].asInt();
+            std::cout<<"start uid:"<<Uid<<std::endl;
+            std::cout<<root.toStyledString()<<std::endl;
+            std::string MD5,UserFilePath,File,FilePath;
+            //获取上传文件名
+            FilePath = root["File"].asString();
+            std::string::size_type    position;
+            position = FilePath.find_last_of("/");
+            File = FilePath.substr(position+1,FilePath.length());
+            MD5 = root["Md5"].asString();
 
-            if(1 == DataBase.UploadFile(UserFilePath , UserFileSize , ServerFilePath , MD5 , flag))  {
+            //上传到客户端的路径
+            UserFilePath = root["Path"].asString() + File;
+
+            int ret = DataBase.UploadFile(MD5,UserFilePath,Uid);
+            if(ret == 1)
+            {
+                //秒传
+                root["Have"] = Json::Value(1);
+                strcpy(buf,root.toStyledString().c_str());
+                send(socketfd,buf,strlen(buf),0);
                 return 1;
+            }
+            else if(ret == 0)
+            {
+                //返回子服务器信息
+                root["Ip"] = Json::Value(WorkIp);
+                root["Port"] = Json::Value(WorkPort);
+                root["Have"] = Json::Value(0);
+                strcpy(buf,root.toStyledString().c_str());
+                send(socketfd,buf,strlen(buf),0);
+                return 0;
             }
             return -1;
         }
@@ -243,6 +268,7 @@ class Mission{
         }
     public:
 //        MyDataBase db[MaxClientConnection];
-        char buf[512];
-        int socketfd;
+        char    buf[512];
+        int     socketfd;
+        int     Uid;      // 用户数据库ID
 };

@@ -30,7 +30,9 @@
 
 #define MaxClientConnection 2
 
-MyDataBase        DataBase;
+std::string       WorkIp = "127.0.0.1";
+std::string       WorkPort = "6000";
+MyDataBase        DataBase;        //数据库
 
 template<typename T>
 void RecvFromClient( Epoll & e , const int & socketfd , ThreadPool<T> & pool , Mission  mission[MaxClientConnection]) {
