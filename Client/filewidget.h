@@ -10,6 +10,7 @@
 #define FILEWIDGET_H
 
 #include"filelistwidget.h"
+#include"myinclude.h"
 
 #include<QWidget>
 #include<QMenu>
@@ -38,6 +39,20 @@ private slots:
     void ShowUpFileDialog();
     //设置当前目录
     void SetCurrentFolder(QString);
+    //进入根目录
+    void EnterRootFolder();
+    //进入上级目录
+    void EnterProFolder();
+    void SetCurFolder(QString);
+private:
+    //进入某个目录
+    void EnterFolder(string);
+public:
+    void EmitShowFilesSig(QString);
+    void EmitSetFolderSig(QString);
+
+signals:
+    void SetFolder(QString);
 
 private:
     //文件浏览类对象
@@ -58,7 +73,6 @@ private:
     QLabel*           currentFolderLabel;
     //当前选中文件
     QString           selectedFile;
-
 };
 
 #endif //FileWidget_H

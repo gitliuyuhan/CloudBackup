@@ -204,6 +204,7 @@ void* UDFileWidget::UpFileThread(void* arg)
     
     //连接子服务器
     int             worksockFd;
+    cout<<strip<<"  "<<strport<<endl;
     int  ret = ConnectServer(QString::fromStdString(strip),QString::fromStdString(strport));
     if(ret<0)
     {

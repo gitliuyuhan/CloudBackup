@@ -39,18 +39,21 @@ public slots:
 private slots:
         //设置文件名字
         void SetFileName();
-signals:
-        void EnterFolderSig(QString);
-        
-public:
         //上一层或下一层目录
         void ShowFiles(QStringList);
+ 
+signals:
+        void EnterFolderSig(QString);
+        void ShowFilesSig(QStringList);
+        
+public:
         //编辑文件名字
         void EditFileName();
         //下载
 //        void DownloadFile();
         //添加条目
         QListWidgetItem* AddFileItem(QString);
+        void EmitShowFilesSig(QString);
 private:
         //文件或目录项
         QListWidgetItem  *fileItem;
