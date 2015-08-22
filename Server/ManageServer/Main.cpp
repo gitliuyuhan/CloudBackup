@@ -31,8 +31,8 @@
 //#define MaxClientConnection 2
 #define MAXUSERS            1000
 
-std::string       WorkIp = "127.0.0.1";
-std::string       WorkPort = "6000";
+std::string       WorkIp = "192.168.20.150";
+std::string       WorkPort = "10000";
 MyDataBase        DataBase;        //数据库
 
 template<typename T>
@@ -103,7 +103,7 @@ int main( int argc , char * argv[] )  {
 
     pthread_t EpollThreadID;
     Mission * mission = new Mission[MAXUSERS + 3];
-    ThreadPool<Mission> pool(1);
+    ThreadPool<Mission> pool(2);
 
     Epoll e(argv[1] , argv[2]);
     EpollMission(e , pool ,argv[1] , argv[2] , mission);

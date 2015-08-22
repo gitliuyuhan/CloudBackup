@@ -8,6 +8,7 @@
 
 
 #include<iostream>
+#include<set>
 #include<string>
 #include<cstdlib>
 #include<cerrno>
@@ -123,25 +124,44 @@ class MyDataBase {
             }
         }
         //进入目录  在数据库中查找符合条件的目录  并且将该目录下的一级文件或者目录
-        std::string DirFiles(std::string dir)  {
-            Json::Value root;
-            std::string sql = "select * from UserInfo where UserFilePath like " + dir + "$;";
+        std::string  DirFiles(int uid,std::string dir)  {
+            char   sqlbuf[1024];
+            int    len=0;
+            sprintf(sqlbuf,"select distinct UserFilePath from UserFileInfo where Uid = %d AND UserFilePath Like '%s%%'",uid,dir.c_str());
+            std::string  sql = sqlbuf;
             MySqlQuery(sql);
-            int i = 0;
-            int num = dir.length();
-            std::string temp;
-            while((row = mysql_fetch_row(res))) {
-                std::string str = row[0];
-                int loc = str.find('/' , num);
-                if(loc)  {
-                    temp = str.substr(num , loc - num + 1);
-                }else {
-                    temp = str.substr(num - 1 , str.rfind("\0"));
+            std::string     str,files="";
+            std::set<std::string>   stringSet;
+            int             pos;
+            std::cout<<"folder:\n";
+            while((row = mysql_fetch_row(res))!=NULL)
+            {
+                str = row[0];
+                std::cout<<str<<std::endl;
+                str = str.erase(0,dir.length());
+                pos = str.find_first_of('/',0);
+                if(pos >= 0)
+                {
+                    str = str.substr(0,pos+1);
                 }
-                std::string numstr = std::to_string(i);
-                root[numstr] = temp;
+                stringSet.insert(str);
             }
-            return root.toStyledString();
+            mysql_free_result(res);
+         
+            if(stringSet.empty())
+            {
+                return files;
+            }
+            std::set<std::string>::iterator    t = stringSet.begin();
+            files = *t;
+            t++;
+            for(;t!=stringSet.end();t++)
+            {
+                std::cout<<"s:"<<*t<<std::endl;
+                files = files + " " + *t;
+            }
+            std::cout<<"files:"<<files<<std::endl;
+            return files;
         }
 
         //新建目录
@@ -252,8 +272,10 @@ class MyDataBase {
 
         }
         //下载文件
-        MYSQL_RES*   DownloadFile(std::string UserFilePath)  {
-            std::string sql = "select * from UserFileInfo where UserFilePath =\"" + UserFilePath+"\";";
+        MYSQL_RES*   DownloadFile(std::string UserFilePath,int id)  {
+            char   sqlbuf[1024];
+            sprintf(sqlbuf,"select * from UserFileInfo where Uid = '%d' AND UserFilePath = '%s'",id,UserFilePath.c_str());
+            std::string sql = sqlbuf;
             MySqlQuery(sql);
             return res;
         }

@@ -31,7 +31,7 @@
 
 //#define SIZE                1000
 #define MaxClientConnection 2
-#define WORKPORT            "6001"
+#define WORKPORT            "10000"
 
 extern MyDataBase  DataBase;
 extern std::string WorkIp;
@@ -54,7 +54,7 @@ class Mission{
 
         //验证账户密码任务
         int AccountPasswd(Json::Value & root , int & socketfd) {
-            std::string UserName , Passwd;
+            std::string UserName , Passwd, rootFolder;
             UserName = root["UserName"].asString();
             Passwd = root["Passwd"].asString();
             int ret = DataBase.AccountPasswd(UserName , Passwd);
@@ -64,8 +64,13 @@ class Mission{
                 Users[socketfd] = ret;
                 Uid = ret;
                 std::cout<<"log Uid:"<<Uid<<std::endl;
+                //获取根目录文件
+                rootFolder = DataBase.DirFiles(Uid,"/");
                 root["status"] = Json::Value(0);
+                root["AllFiles"] = Json::Value(rootFolder);
+                root["Folder"] = Json::Value("/");
                 strcpy(buf, root.toStyledString().c_str());
+                std::cout<<"logsu :"<<rootFolder<<std::endl;
                 send(socketfd,buf,strlen(buf),0);
                 return 1;
             }
@@ -124,12 +129,13 @@ class Mission{
         }
 
         //进入目录
-        std::string DirFiles(Json::Value root , int & socketfd)  {
-            std::string AimDir , AllFiles;
-            AimDir = root["UserFilePath"].asString();
-            AllFiles = DataBase.DirFiles(AimDir);
-
-            return AllFiles;
+        void  DirFiles(Json::Value root , int & socketfd)  {
+            std::string  folder,AllFiles;
+            folder = root["Folder"].asString();
+            AllFiles = DataBase.DirFiles(Uid,folder);
+            root["AllFiles"] = Json::Value(AllFiles);
+            strcpy(buf,root.toStyledString().c_str());
+            send(socketfd,buf,strlen(buf),0);
         }
         //创建新目录
         int CreateNewDir(Json::Value root , int &  socketfd) {
@@ -220,7 +226,7 @@ class Mission{
 
             MYSQL_RES*    res;
             MYSQL_ROW     row;
-            res = DataBase.DownloadFile(UserFilePath);
+            res = DataBase.DownloadFile(UserFilePath,Uid);
             printf("res 2 =%p\n",res);
             while((row = mysql_fetch_row(res))!=NULL)
             {
@@ -270,6 +276,14 @@ class Mission{
             send(socketfd , (void *)buf , sizeof(buf) , 0);
         }
 
+        void Banlance(Json::Value root,int & socketfd)
+        {
+            std::cout<<root.toStyledString();
+            WorkIp = root["ip"].asString();
+            WorkPort = root["port"].asString();
+            std::cout<<"WorkIp:"<<WorkIp<<"  "<<"WorkPort:"<<WorkPort<<std::endl;
+        }
+
         //根据用户给的行为来判断需要调用什么函数
         void UserRequest() {
             Json::Reader reader;
@@ -278,9 +292,12 @@ class Mission{
 
             if(reader.parse(buf,root))  {
                 status = root["status"].asInt();
+                std::cout<<"status:"<<status<<std::endl;
             }
+            std::cout<<buf<<std::endl;
             switch (status)
             {
+                case 0:Banlance(root, socketfd);break;
                 case 1:AccountPasswd(root , socketfd);break;
                 case 2:Regiester(root , socketfd);break;
                 case 3:DirFiles(root , socketfd);break;
@@ -295,7 +312,7 @@ class Mission{
         }
     public:
 //        MyDataBase db[MaxClientConnection];
-        char    buf[512];
+        char    buf[1024];
         int     socketfd;
         int     Uid;      // 用户数据库ID
     private:
