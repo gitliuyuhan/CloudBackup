@@ -33,15 +33,48 @@ timeout = 20
 
 result = []
 
+#保存所有子服务器的负载
+mp = {}
+
+#设置连接主服务器的客户端
+host = '192.168.20.184'
+port = 10000
+addr = (host, port)
+tcpMaster = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
+tcpMaster.connect(addr)
+
 #创建定时发送信号线程
 def threadFunc():
     while 1:
-        #定时为4秒
-        time.sleep(4)
+        #将结果-->负载最轻的发送给主服务器
+        if mp: 
+            #给接受到的所有子服务器的负载进行排序
+            sorted(mp.iteritems(), key = lambda d:d[1], reverse = False)
+            
+            #print ret1
+            print '---------------------------------'
+            print mp
+            tmp = mp.keys()[0]
+            m_ip = tmp[0]
+            print m_ip
+            m_port = tmp[1]
+            print m_port
+            ret1 = '{status:0, ip:' + str(m_ip) + ', port:' + str(m_port) + '}'
+            print ret1
+            print '---------------------------------'
+            ret = 'hello world'
+            #清空dict中的子服务器内容，准备下一次采集负载
+            mp.clear();
+            #发送给主服务器结果-->负载最轻的子服务器
+            tcpMaster.send(ret1)
+        
         #向集合中每个workerServer发送信号
         print "send signal"
         for fd in workServer_fd:
+            #发送给子服务器信号
             fd.send("send signal")
+        #定时为4秒
+        time.sleep(5)
 
 #创建线程，执行定时发送信号任务
 tid = threading.Thread(target = threadFunc)
@@ -49,28 +82,26 @@ tid.start()
 
 
 #提取数据
-def parse(s):
+def parse(s, addr):
     #按照split分割
     t = s.split('split')
-    #print t[0]
-    #print t[1]
-    #print t[2]
-    #print t[3]
+    print t[0]
+    print t[1]
+    print t[2]
+    print t[3]
     #获得cpu使用率
     cre = re.search('ni,(.+?)id', t[0])
-    #cre = re.search('id', t[0])
+    ##cre = re.search('id', t[0])
     s1 = cre.group(1)
     ss1 = s1.split(' ')
-    #print ss1[1]
+    print ss1[1]
     i0 = float(ss1[1])
-    #print i0
-    #print type(i0)
     #获得内存空闲大小
     mre = re.search('used,(.+?)free,', t[1])
-    #print mre.group(1)
+    ##print mre.group(1)
     s2 = mre.group(1)
     ss2 = s2.split(' ')
-    #print ss2[3]
+    ##print ss2[3]
     i2 = int(ss2[3])
     #print i2
     #print type(i2)
@@ -82,21 +113,22 @@ def parse(s):
         if ss3[i3] not in ' ':
            tp.append(ss3[i3]) 
     #    print i3,ss3[i3]
-    #print 'xxxxxxxxxxxxxxx'
     #for ttt in tp:
     #    print ttt
-    rx = float(tp[4])
-    tx = float(tp[5])
+    rx = float(tp[2])
+    tx = float(tp[3])
     #print rx, tx
-    #print 'xxxxxxxxxxxxxxx'
-    ##获得磁盘使用率
+    #获得磁盘使用率
     s4 = t[3].split(' ')
-    #for i4 in range(len(s4)):
-    #    print i4, s4[i4]
-    ior = float(s4[24])
-    iow = float(s4[32])
+    for i4 in range(len(s4)):
+        print i4, s4[i4]
+    ior = float(s4[23])
+    iow = float(s4[31])
 
     print 'cpu:%lf mem:%d (rxkB:%lf txkB:%lf) (ior:%lf iow:%lf)' % (i0, i2, rx, tx, ior, iow)
+    print addr
+    mp[addr] = rx + tx + ior + iow
+    print mp
 
 #select事件集合，收集workerServer发送的负载内容，解析后发送给masterServer
 while 1:
@@ -124,7 +156,8 @@ while 1:
             date = s.recv(1024)
             result.append(date)
             #print type(date) 
-            parse(date)
+            parse(date, s.getpeername())
+            #parse(date)
             if date:
                 print " received date from ", s.getpeername()
                 #print date
