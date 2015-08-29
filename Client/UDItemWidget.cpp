@@ -27,21 +27,24 @@ UDItemWidget::UDItemWidget(int ty,QWidget* parent):QWidget(parent)
     fileLabel = new QLineEdit;
     fileLabel->setFrame(false);
     fileLabel->setReadOnly(true);
+    fileLabel->setAlignment(Qt::AlignCenter);
 
     proBar = new QProgressBar;
     proBar->setValue(0);
+    proBar->setStyleSheet("max-width:180;min-width:180");
 
     rateLabel = new QLabel;
+    rateLabel->setStyleSheet("max-width:120;min-width:120");
 
     stopButton = new QPushButton(tr("停止"));
     stopButton->setIcon(QIcon(":/image/stop.png"));
     stopButton->setFlat(true);
-    stopButton->setStyleSheet("max-width:70");
+    stopButton->setStyleSheet("max-width:60");
 
     delButton = new QPushButton(tr("删除"));
     delButton->setIcon(QIcon(":/image/remove.png"));
     delButton->setFlat(true);
-    delButton->setStyleSheet("max-width:70");
+    delButton->setStyleSheet("max-width:60");
 
     itemLayout->addWidget(stateLabel);
     itemLayout->addWidget(fileLabel);
@@ -89,6 +92,13 @@ void UDItemWidget::EmitProBarValue(float value,float t)
 //设置进度条范围
 void UDItemWidget::SetProBarRange(int start,float sum,int base)
 {
+    if(base == 0)
+    {
+        proBar->setRange(0,100);
+        proBar->setValue(100);
+        rateLabel->setText("");
+        return;
+    }
     proBar->setRange(start,(int)sum);
     switch(base)
     {

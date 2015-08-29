@@ -108,7 +108,15 @@ void MainWindow::ShowMainWindow(QString ip,QString port,int sock,QString sname,Q
     servPort = port;
     sockFd = sock;
     userName = sname;
-
+    string                strjson = sjson.toStdString();
+    string                str;
+    Json::Value           json;
+    Json::Reader          reader;
+    if(reader.parse(strjson,json))
+    {
+        str = json["AllFiles"].asString();
+    }
+    this->fileWidget->EmitShowFilesSig(QString::fromStdString(str));
     pthread_create(&thid,NULL,RecvThread,this);
 }
 
@@ -136,8 +144,16 @@ void* MainWindow::RecvThread(void* arg)
             mark = json["status"].asInt();
         }
         string    strbuf = buf;
+        string    strfolder,strfiles;
         switch(mark)
         {
+            case 3:
+                //发射进入目录信号
+                strfolder = json["Folder"].asString();
+                strfiles = json["AllFiles"].asString();
+                cthis->fileWidget->EmitShowFilesSig(QString::fromStdString(strfiles));
+                cthis->fileWidget->EmitSetFolderSig(QString::fromStdString(strfolder));
+                break;
             case 7:
                 //发射上传文件信号
                 cout<<"recv 7\n";

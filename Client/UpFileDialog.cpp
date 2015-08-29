@@ -33,6 +33,22 @@ void UpFileDialog::UpLoadFile()
     Json::Value   json;
     json["status"] = Json::Value(7);
     json["File"] = Json::Value(currentPath.toStdString());
+    json["Path"] = Json::Value(clientPath.toStdString());
+    json["Have"] = Json::Value(0);   //请求上传  
+
+    //获取Md5值
+    char     md5buf[33];
+    memset(md5buf,'\0',sizeof(md5buf));
+    FILE*    fp;
+    string   md5sum;
+    md5sum = "md5sum " + currentPath.toStdString();
+    fp = popen(md5sum.c_str(),"r");
+    fread(md5buf,sizeof(char),sizeof(md5buf),fp);
+    pclose(fp);
+    md5buf[32] = '\0';
+
+    json["Md5"] = Json::Value(md5buf);
+
     string        jsonBuf = json.toStyledString();
     int ret = send(sockFd,jsonBuf.c_str(),strlen(jsonBuf.c_str()),0);
     if(ret<0)

@@ -9,6 +9,7 @@
 #include"filewidget.h"
 #include"downfiledialog.h"
 #include"upfiledialog.h"
+#include"connectserv.h"
 
 #include<QHBoxLayout>
 #include<QVBoxLayout>
@@ -16,6 +17,9 @@
 #include<QMouseEvent>
 #include<QDebug>
 #include<QStringList>
+#include<json/json.h>
+
+extern int sockFd;
 
 /* 构造函数 */
 FileWidget::FileWidget(QWidget* parent) : QWidget(parent)
@@ -26,6 +30,10 @@ FileWidget::FileWidget(QWidget* parent) : QWidget(parent)
     uploadButton = new QPushButton(tr("上传"));
     lastFolderButton = new QPushButton(tr("上一级目录"));
     rootFolderButton = new QPushButton(tr("根目录"));
+
+    connect(rootFolderButton,SIGNAL(clicked()),this,SLOT(EnterRootFolder()));
+    connect(lastFolderButton,SIGNAL(clicked()),this,SLOT(EnterProFolder()));
+
     currentFolderLabel = new QLabel(tr("> /"));
 
     connect(uploadButton,SIGNAL(clicked()),this,SLOT(ShowUpFileDialog()));
@@ -45,6 +53,7 @@ FileWidget::FileWidget(QWidget* parent) : QWidget(parent)
     setLayout(mainLayout);
 
     connect(fileListWidget,SIGNAL(EnterFolderSig(QString)),this,SLOT(SetCurrentFolder(QString)));
+    connect(this,SIGNAL(SetFolder(QString)),this,SLOT(SetCurFolder(QString)));
 }
 
 /* 新建文件夹槽函数 */
@@ -107,11 +116,70 @@ void FileWidget::ShowDownFileDialog()
 void FileWidget::ShowUpFileDialog()
 {
     UpFileDialog*     upDialog = new UpFileDialog;
+    QString str = currentFolderLabel->text();
+    str.replace("> ","");
+    upDialog->clientPath = str;
     upDialog->show();
 }
 
-//设置当前目录
+/* 进入某个目录 */
+void FileWidget::EnterFolder(string folder)
+{
+    Json::Value       json;
+    json["status"] = Json::Value(3);
+    json["Folder"] = Json::Value(folder);
+    string buf = json.toStyledString();
+    send(sockFd,buf.c_str(),buf.length(),0);
+}
+
+//设置双击进入目录
 void FileWidget::SetCurrentFolder(QString folder)
 {
-    currentFolderLabel->setText((currentFolderLabel->text())+folder+"/");
+ //   currentFolderLabel->setText((currentFolderLabel->text())+folder+"/");
+    
+    QString   str = currentFolderLabel->text() + folder + "/";
+    str.replace("> ","");
+    EnterFolder(str.toStdString());
+}
+
+void FileWidget::EmitSetFolderSig(QString folder)
+{
+    emit SetFolder(folder);
+}
+
+//设置当前目录
+void FileWidget::SetCurFolder(QString folder)
+{
+    currentFolderLabel->setText("> " + folder);
+}
+
+//进入根目录
+void FileWidget::EnterRootFolder()
+{
+    EnterFolder("/");
+}
+
+//进入上层目录
+void FileWidget::EnterProFolder()
+{
+    QString      qstr = currentFolderLabel->text();
+    qstr.replace("> ","");
+    string       str = qstr.toStdString();
+    if(str.compare("/") != 0)
+    {
+        int    i;
+        for(i=str.length()-2;i >= 0;i--)
+        {
+            if(str.at(i) == '/')
+                break;
+        }
+        str = str.substr(0,i+1);
+    }
+    EnterFolder(str);
+}
+
+/* 发射进入目录信号 */
+void FileWidget::EmitShowFilesSig(QString files)
+{
+    fileListWidget->EmitShowFilesSig(files);
 }

@@ -53,6 +53,8 @@ void DownFileDialog::LinePathShow(const QString &path)
 /* 下载文件 */
 void DownFileDialog::DownLoadFile()
 {
+    //关闭对话框
+    this->close();
     extern int   sockFd;
     //Json格式
     Json::Value     json;

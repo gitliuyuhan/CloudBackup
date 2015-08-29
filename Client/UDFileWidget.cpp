@@ -25,6 +25,8 @@
 #define    M     (1024*1024)
 #define    G     (1024*1024*1024)
 
+extern  int   sockFd;
+
 UDFileWidget::UDFileWidget(QTabWidget* parent):QTabWidget(parent)
 {
     setStyleSheet("QTabBar::tab{background: #D1EEEE;min-width:135;min-height:40;} \ QTabBar::tab:hover{background: white} \ QTabBar::tab:selected{background:white;border-color: #EE0000}");
@@ -177,18 +179,32 @@ void* UDFileWidget::UpFileThread(void* arg)
     UDItemWidget*  iWidget = (UDItemWidget*)(cthis->upListWidget->itemWidget(item));
 
     cout<<"upfile\n"<<strjson<<endl;
-    string          strip,strport,strfile;
+    string          strip,strport,strfile,strcpath,strmd5;
+    int             have = 0;
+
     Json::Reader    reader;
     Json::Value     json;
     if(reader.parse(strjson,json))
     {
         strip = json["Ip"].asString();
         strport = json["Port"].asString();
-        strfile = json["File"].asString();
+        strfile = json["File"].asString();   //上传文件本地路径
+        strcpath = json["Path"].asString();  //客户端文件路径
+        strmd5 = json["Md5"].asString();
+        have = json["Have"].asInt();         //秒传标志
+    }
+    if(have == 1)
+    {
+        iWidget->EmitStateSig(tr("上传完成"));
+        iWidget->EmitProBarRange(0,100,0);
+        cout<<"秒传成功\n";
+        pthread_exit(0);
+        return NULL;
     }
     
     //连接子服务器
     int             worksockFd;
+    cout<<strip<<"  "<<strport<<endl;
     int  ret = ConnectServer(QString::fromStdString(strip),QString::fromStdString(strport));
     if(ret<0)
     {
@@ -197,6 +213,7 @@ void* UDFileWidget::UpFileThread(void* arg)
         return NULL;
     }
     worksockFd = ret;
+    /*
     //获取Md5
     char     md5buf[33];
     memset(md5buf,'\0',sizeof(md5buf));
@@ -207,6 +224,7 @@ void* UDFileWidget::UpFileThread(void* arg)
     fread(md5buf,sizeof(char),sizeof(md5buf),fp);
     pclose(fp);
     md5buf[32] = '\0';
+    */
 
     //打开文件，并获取文件大小
     int       fileFd;
@@ -226,7 +244,7 @@ void* UDFileWidget::UpFileThread(void* arg)
     //发送Md5文件名
     Json::Value       upjson;
     upjson["mark"] = Json::Value(2);
-    upjson["md5"] = Json::Value(md5buf);
+    upjson["md5"] = Json::Value(strmd5);
     upjson["Size"] = Json::Value(sizebuf);
     string   buf;
     buf = upjson.toStyledString();
@@ -327,6 +345,12 @@ void* UDFileWidget::UpFileThread(void* arg)
 
     if(sum >= statFile.st_size)
     {
+        //上传完成反馈给主服务器
+        json["Have"] = Json::Value(1);
+        json["Size"] = Json::Value(sizebuf);
+        strjson = json.toStyledString();
+        send(sockFd,strjson.c_str(),strjson.length(),0);
+
         iWidget->EmitStateSig(tr("上传完成"));
         iWidget->EmitProBarValue(sum/(float)n,rate);
         cout<<"文件上传成功"<<endl;
@@ -351,7 +375,7 @@ void*  UDFileWidget::DownFileThread(void* arg)
     string  strfile; //下载文件名
     string  strpath; //下载文件路径
     string  strsave; //文件保存路径
-    string  strfiles;//服务器文件存储路径
+//    string  strfiles;//服务器文件存储路径
     string  strmd5;  //文件Md5
     string  strsize; //文件大小
     long long      filesize = 0;//文件大小
@@ -363,11 +387,12 @@ void*  UDFileWidget::DownFileThread(void* arg)
     {
         /*获取子服务器ip*/
         //返回‘/’第一次出现的位置
-        string::size_type position;
-        strfiles = json["Files"].asString();
-        position = strfiles.find_first_of("/");
-        strip = strfiles.substr(0,position);
-
+//        string::size_type position;
+//        strfiles = json["Files"].asString();   //服务端文件
+//        position = strfiles.find_first_of("/");
+//        strip = strfiles.substr(0,position);
+   
+        strip = json["Ip"].asString();
         strport = json["Port"].asString();
         strsave = json["SavePath"].asString();
         strmd5 = json["Md5"].asString();

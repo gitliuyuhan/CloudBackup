@@ -35,7 +35,7 @@ FileListWidget::FileListWidget(QListWidget* parent):QListWidget(parent)
     setSpacing(SPACING);
 
 //    setContextMenuPolicy(Qt::DefaultContextMenu);
-    
+    connect(this,SIGNAL(ShowFilesSig(QStringList)),this,SLOT(ShowFiles(QStringList)));
 
 }
 
@@ -98,12 +98,15 @@ void FileListWidget::DeleteFile()
 /* 显现目录下所以文件 */
 void FileListWidget::ShowFiles(QStringList  filelist)
 {
+    clear();
     if(filelist.size()>0)
     {
-        clear();
         int      i;
         for(i=0;i<filelist.size();i++)
+        {
+            qDebug()<<filelist[i];
             AddFileItem(filelist[i]);
+        }
     }
 }
 
@@ -120,6 +123,14 @@ void FileListWidget::RenameFile()
     EditFileName();
 }
 
+/* 发射进入文件信号 */
+void FileListWidget::EmitShowFilesSig(QString files)
+{
+    QStringList     filelist;
+    filelist = files.split(" ",QString::SkipEmptyParts);
+    emit ShowFilesSig(filelist);
+}
+
 /* 鼠标双击事件 */
 void FileListWidget::mouseDoubleClickEvent(QMouseEvent* event)
 {
@@ -127,10 +138,10 @@ void FileListWidget::mouseDoubleClickEvent(QMouseEvent* event)
     fileItem = this->itemAt(mapFromGlobal(QCursor::pos()));
     if(fileItem != NULL)
     {
-        QStringList   filelist;
-        filelist<<tr("图片/")<<tr("111.png")<<tr("abc.txt")<<tr("视频/");
+//        QStringList   filelist;
+//        filelist<<tr("图片/")<<tr("111.png")<<tr("abc.txt")<<tr("hhh.txt")<<tr("视频/");
         emit EnterFolderSig(fileItem->text());
-        this->ShowFiles(filelist);
+//        this->ShowFiles(filelist);
     }
 }
 

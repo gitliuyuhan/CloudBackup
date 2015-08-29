@@ -28,12 +28,15 @@
 #include"Mission.cpp"
 #include"ThreadPool.hpp"
 
-#define MaxClientConnection 2
+//#define MaxClientConnection 2
+#define MAXUSERS            1000
 
-MyDataBase        DataBase;
+std::string       WorkIp = "192.168.20.150";
+std::string       WorkPort = "10000";
+MyDataBase        DataBase;        //数据库
 
 template<typename T>
-void RecvFromClient( Epoll & e , const int & socketfd , ThreadPool<T> & pool , Mission  mission[MaxClientConnection]) {
+void RecvFromClient( Epoll & e , const int & socketfd , ThreadPool<T> & pool , Mission  mission[]) {
     char buf[TCP_BUFFER_SIZE];
     while(1) {
         memset( buf , '\0' , TCP_BUFFER_SIZE );
@@ -52,16 +55,18 @@ void RecvFromClient( Epoll & e , const int & socketfd , ThreadPool<T> & pool , M
             //判断用户的行为
             //UserRequest(buf,socketfd);
             strcpy(mission[socketfd].buf,buf);
-            mission[socketfd].socketfd = socketfd;
+//            mission[socketfd].socketfd = socketfd;
+            mission[socketfd].MissionInit(socketfd);
             pool.AddTask(mission[socketfd]);
+            std::cout<<"------\n";
         }
     }
 }
 
 template<typename T>
-void EpollMission( Epoll & e , ThreadPool<T> & pool ,char * ip , char * port , Mission  mission[MaxClientConnection])  {
+void EpollMission( Epoll & e , ThreadPool<T> & pool ,char * ip , char * port , Mission  mission[])  {
     int num;
-    int socketfds[MaxClientConnection];
+//  int socketfds[MaxClientConnection];
     e.CreateTcpSocket();
     e.RegisterSocket();
     while(1) {
@@ -87,6 +92,9 @@ void EpollMission( Epoll & e , ThreadPool<T> & pool ,char * ip , char * port , M
     close(e.socketfd);
 }
 
+//保存登录用户的ID
+int      Mission::Users[MAXUSERS+3] = {0};
+
 int main( int argc , char * argv[] )  {
     if(argc < 3) {
         std::cout << "参数错误!" << std::endl;
@@ -94,8 +102,8 @@ int main( int argc , char * argv[] )  {
     }
 
     pthread_t EpollThreadID;
-    Mission * mission = new Mission[MaxClientConnection];
-    ThreadPool<Mission> pool(1);
+    Mission * mission = new Mission[MAXUSERS + 3];
+    ThreadPool<Mission> pool(2);
 
     Epoll e(argv[1] , argv[2]);
     EpollMission(e , pool ,argv[1] , argv[2] , mission);
