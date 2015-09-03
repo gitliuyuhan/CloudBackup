@@ -92,10 +92,12 @@ ServerClient(std::string i, int p):
         }
     );
     */
+    char buffer[16];
     std::thread tid([&](){
                 while(1)
                 {
                     std::string getinfo;
+                    recv(loadServer_fd, buffer, 16, 0);
                     getinfo += info.getInfo(cpuInfo);
                     getinfo += "\0\n";
                     getinfo += info.getInfo(memInfo);
@@ -106,7 +108,7 @@ ServerClient(std::string i, int p):
                     getinfo += "\0\n";
                     std::cout << getinfo << std::endl;
                     send(loadServer_fd, getinfo.c_str(), getinfo.size(), 0);
-                    sleep(2);
+                    //sleep(4);
                 }
             });
     tid.detach();
