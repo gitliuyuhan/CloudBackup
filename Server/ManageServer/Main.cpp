@@ -31,7 +31,7 @@
 //#define MaxClientConnection 2
 #define MAXUSERS            1000
 
-std::string       WorkIp = "192.168.20.150";
+std::string       WorkIp = "127.0.0.1";
 std::string       WorkPort = "10000";
 MyDataBase        DataBase;        //数据库
 
@@ -96,6 +96,7 @@ void EpollMission( Epoll & e , ThreadPool<T> & pool ,char * ip , char * port , M
 int      Mission::Users[MAXUSERS+3] = {0};
 
 int main( int argc , char * argv[] )  {
+
     if(argc < 3) {
         std::cout << "参数错误!" << std::endl;
         exit(0);

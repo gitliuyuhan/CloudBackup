@@ -31,7 +31,7 @@
 
 //#define SIZE                1000
 #define MaxClientConnection 2
-#define WORKPORT            "10000"
+#define WORKPORT            "10001"
 
 extern MyDataBase  DataBase;
 extern std::string WorkIp;
@@ -117,13 +117,18 @@ class Mission{
                 send(socketfd,buf,strlen(buf),0);
                 return 0;
             }
-            else
+            else if(ret==2)
             {
                 //邮箱已被占用
                 root["status"] = Json::Value(2);
                 strcpy(buf,root.toStyledString().c_str());
                 send(socketfd,buf,strlen(buf),0);
                 return 2;
+            }
+            else
+            {
+                std::cout<<"添加数据失败"<<std::endl;
+                return -1;
             }
 
         }
