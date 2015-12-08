@@ -7,6 +7,9 @@
  =======================================================*/
 
 #include"monitorwidget.h"
+#include"addmonitorwidget.h"
+
+#include<QVBoxLayout>
 
 MonitorWidget::MonitorWidget(QTabWidget* parent):QTabWidget(parent)
 {
@@ -15,16 +18,78 @@ MonitorWidget::MonitorWidget(QTabWidget* parent):QTabWidget(parent)
     setStyleSheet("QTabBar::tab{background: #D1EEEE;min-width:135;min-height:40;} \ QTabBar::tab:hover{background: white} \ QTabBar::tab:selected{background:white;border-color: #EE0000}");
    
     widget1 = new MoniFileWidget;
-    widget1->SetSelectedFile("/home/lyh/");
-    for(int i=0;i<15;i++)
-        widget1->AddListItem();
-    widget1->SetSelectedFile("/home/lyh/program/Qt/CloudBackup/image/start.png");
-    widget1->AddListItem();
 
-    widget2 = new QWidget;
-    widget3 = new QWidget;
+    //开始或暂停监控
+    connect(widget1,SIGNAL(StartSig(QString,int)),this,SLOT(StartMonitorSlot(QString,int)));
+    
+    InotifyFilter               itmp;
+    string       s,sname;
+    int          b;
+    ifstream     in("./etc/lyh/record.txt");    //监控文件
+    while(!in.eof())
+    {
+        in>>s;
+        if(in.fail())
+            break;
+        cout<<s<<endl;
+        sname = s;   
+        widget1->SetSelectedFile(QString::fromStdString(s));
+        
+        //以下读取过滤
+        in>>s;
+        itmp.startdate = s;
+        in>>s;
+        itmp.enddate = s;
+        in>>s;
+        itmp.suffix = s;
+        in>>s;
+        itmp.startsize = s;
+        in>>s;
+        itmp.endsize = s;
+        in>>b;
+        itmp.isfolder = b;
+        in>>b;
+        itmp.isfile = b;
+        
+        //读取起始监控日期
+        in>>s;
+        cout<<s<<endl;
+        itmp.idate = s;
+        widget1->AddListItem(QString::fromStdString(s));
 
-    addTab(widget1,tr("正在监控"));
-    addTab(widget2,tr("添加监控"));
+        //加入监控列表
+        fnotify.InotifyListAdd(sname,itmp);
+    }
+    in.close();
+    
+    addMonitorButton = new QPushButton(tr("添加监控项"));
+    connect(addMonitorButton,SIGNAL(clicked()),this,SLOT(ShowAddMonitorSlot()));
+ //   widget2 = new QWidget;
+    widget3 = new VersionWidget;
+
+    addTab(widget1,tr("监控列表"));
+    addTab(addMonitorButton,tr("添加监控"));
     addTab(widget3,tr("版本回退"));
+}
+
+//add monitor
+void MonitorWidget::ShowAddMonitorSlot()
+{
+    AddMonitorWidget*      w = new AddMonitorWidget;
+    w->resize(800,600);
+    w->show();
+}
+
+//开始或暂停监控
+void MonitorWidget::StartMonitorSlot(QString file,int state)
+{
+    switch(state)
+    {
+        case 0:
+            fnotify.InotifyRm(file.toStdString());
+            break;
+        case 1:
+            fnotify.InotifyAdd(file.toStdString());
+            break;
+    }
 }

@@ -1,0 +1,6 @@
+/home/lyh/Music null null null null null 0 0 2015-12-08|14:49:51|??
+/home/lyh/test null null null null null 0 0 2015-12-08|19:44:41|??
+/home/lyh/Documents null null null null null 0 0 2015-12-08|21:14:41|??
+/home/lyh/WWW null null null null null 0 0 2015-12-08|21:32:00|??
+/home/lyh/SourceCode null null null null null 0 0 2015-12-08|21:42:19|??
+/home/lyh/SourceCode null null null null null 0 0 2015-12-08|21:42:45|??

@@ -8,6 +8,7 @@
 
 #include"mainwindow.h"
 #include"enterwidget.h"
+#include"addmonitorwidget.h"
 
 #include<QApplication>
 #include<QTextCodec>
@@ -22,7 +23,12 @@ int main(int argc,char* argv[])
 {
     QApplication app(argc,argv);
     QTextCodec::setCodecForTr(QTextCodec::codecForLocale()); //设置编码
-
+/*
+    AddMonitorWidget    w;
+    w.resize(800,600);
+    w.show();
+*/
+    
     MainWindow    *mainWindow = new MainWindow;
 
     EnterWidget   enterWidget;

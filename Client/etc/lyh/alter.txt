@@ -1,0 +1,7 @@
+add /home/lyh/Music /home/lyh/Music/abc.txt
+modify /home/lyh/Music/abc.txt 1449563698
+add /home/lyh/Music /home/lyh/Music/abc.txt
+modify /home/lyh/Music/abc.txt 1449564259
+
+add /home/lyh/Music /home/lyh/Music/abc.txt
+modify /home/lyh/Music/abc.txt 1449582047

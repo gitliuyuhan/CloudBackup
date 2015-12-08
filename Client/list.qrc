@@ -16,5 +16,7 @@
        <file>image/1.jpg</file>
        <file>image/2.png</file>
        <file>image/trans.jpg</file>
+       <file>image/down.png</file>
+       <file>image/cancel.png</file>
    </qresource>
 </RCC>

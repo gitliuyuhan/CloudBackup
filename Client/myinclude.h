@@ -21,11 +21,22 @@
 #include<fcntl.h>
 #include<sys/stat.h>
 #include<sys/sendfile.h>
+#include<time.h>
 #include<pthread.h>
+#include<dirent.h>
 
 #include<iostream>
+#include<fstream>
 #include<string>
+#include<set>
+#include<map>
+#include<vector>
 using namespace std;
+
+//自定义函数声明
+
+//获取路径中的目录或文件名
+string getRoadFolder(string);
 
 #endif//MYCINCLUDE_H
 

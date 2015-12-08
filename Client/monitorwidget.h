@@ -10,9 +10,13 @@
 #define MONITORWIDGET_H
 
 #include"monifilewidget.h"
+#include"versionwidget.h"
+#include"myinclude.h"
+#include"finotify.h"
 
 #include<QTabWidget>
 #include<QWidget>
+#include<QPushButton>
 
 class MonitorWidget : public QTabWidget
 {
@@ -20,10 +24,16 @@ class MonitorWidget : public QTabWidget
 public:
     MonitorWidget(QTabWidget* parent=0);
     ~MonitorWidget(){}
+private slots:
+    //开始或暂停监控
+    void StartMonitorSlot(QString,int);
+    void ShowAddMonitorSlot();
 private:
     MoniFileWidget*   widget1;
-    QWidget*   widget2;
-    QWidget*   widget3;
+    FInotify          fnotify;
+//    QWidget*          widget2;
+    QPushButton*      addMonitorButton;
+    VersionWidget*    widget3;
 };
 
 #endif//MONITORWIDGET_H
