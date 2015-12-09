@@ -17,17 +17,21 @@ EnterWidget::EnterWidget(QWidget* parent):QWidget(parent)
     QFont  font;
     font.setPointSize(15);
     font.setBold(true);
+
     loginButton = new QPushButton(tr("登录"));
     loginButton->setStyleSheet("max-width: 150;min-width: 150;color: white;");
 //    loginButton->setFlat(true);
     loginButton->setFont(font);
+    loginButton->setFocusPolicy(Qt::NoFocus);
     connect(loginButton,SIGNAL(clicked()),this,SLOT(ShowLoginWidget()));
 
     sendFileButton = new QPushButton(tr("发送文件"));
     sendFileButton->setFont(font);
+    loginButton->setFocusPolicy(Qt::NoFocus);
     sendFileButton->setStyleSheet("max-width: 150;min-width: 150;color: white;");
     recvFileButton = new QPushButton(tr("接收文件"));
     recvFileButton->setFont(font);
+    loginButton->setFocusPolicy(Qt::NoFocus);
     recvFileButton->setStyleSheet("max-width: 150;min-width: 150;color: white;");
 
     menuWidget = new QWidget;

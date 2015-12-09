@@ -15,9 +15,12 @@ MonitorWidget::MonitorWidget(QTabWidget* parent):QTabWidget(parent)
 {
 //    setTabShape(QTabWidget::Triangular);
 //    setFocusPolicy(Qt::NoFocus);
-    setStyleSheet("QTabBar::tab{background: #D1EEEE;min-width:135;min-height:40;} \ QTabBar::tab:hover{background: white} \ QTabBar::tab:selected{background:white;border-color: #EE0000}");
+    setStyleSheet("QTabBar::tab{background: #D1EEEE;min-width:135;min-height:40;} \ QTabBar::tab:hover{background: white} \ QTabBar::tab:selected{background:lightseagreen;border-color: #EE0000}");
    
     widget1 = new MoniFileWidget;
+    widget1->setFocusPolicy(Qt::NoFocus);
+    widget1->setFrameShape(QListWidget::NoFrame);//无边框
+    widget1->setStyleSheet("QListWidget::item:selected{background-color:#C1FFC1;color:black;} ");
 
     //开始或暂停监控
     connect(widget1,SIGNAL(StartSig(QString,int)),this,SLOT(StartMonitorSlot(QString,int)));
@@ -63,11 +66,19 @@ MonitorWidget::MonitorWidget(QTabWidget* parent):QTabWidget(parent)
     in.close();
     
     addMonitorButton = new QPushButton(tr("添加监控项"));
+    addMonitorButton->setFocusPolicy(Qt::NoFocus);
+    addMonitorButton->setStyleSheet("background-color:white");
+
     connect(addMonitorButton,SIGNAL(clicked()),this,SLOT(ShowAddMonitorSlot()));
  //   widget2 = new QWidget;
     widget3 = new VersionWidget;
+    widget3->setFocusPolicy(Qt::NoFocus);
+    widget3->setFrameShape(QListWidget::NoFrame);//无边框
+    widget3->setStyleSheet("QListWidget::item:selected{background-color:#C1FFC1;color:black;} ");
+
     connect(&fnotify,SIGNAL(VersionAlterSig(string,string,string)),widget3,SLOT(VersionAlterSlot(string,string,string)));
 
+    setFocusPolicy(Qt::NoFocus);
     addTab(widget1,tr("监控列表"));
     addTab(addMonitorButton,tr("添加监控"));
     addTab(widget3,tr("版本回退"));

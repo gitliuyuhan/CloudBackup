@@ -32,8 +32,13 @@ UDFileWidget::UDFileWidget(QTabWidget* parent):QTabWidget(parent)
     setStyleSheet("QTabBar::tab{background: #D1EEEE;min-width:135;min-height:40;} \ QTabBar::tab:hover{background: white} \ QTabBar::tab:selected{background:white;border-color: #EE0000}");
 
     upListWidget = new QListWidget;
-//    upListWidget->setFrameShape(QListWidget::NoFrame);
+    upListWidget->setFocusPolicy(Qt::NoFocus);
+    upListWidget->setFrameShape(QListWidget::NoFrame);
+    upListWidget->setStyleSheet("QListWidget::item:selected{background-color:#C1FFC1;color:black;} ");
     downListWidget = new QListWidget;
+    downListWidget->setFocusPolicy(Qt::NoFocus);
+    downListWidget->setFrameShape(QListWidget::NoFrame);
+    downListWidget->setStyleSheet("QListWidget::item:selected{background-color:#C1FFC1;color:black;} ");
 
     QWidget*     upitemWidget = new QWidget(this);
     QWidget*     dwitemWidget = new QWidget(this);
@@ -92,6 +97,8 @@ UDFileWidget::UDFileWidget(QTabWidget* parent):QTabWidget(parent)
     qRegisterMetaType<string>("string");
     connect(this,SIGNAL(UpFileSig(string)),this,SLOT(UpFile(string)));
     connect(this,SIGNAL(DownFileSig(string)),this,SLOT(DownFile(string)));
+
+    setFocusPolicy(Qt::NoFocus);
 }
 
 //发射上传文件信号
