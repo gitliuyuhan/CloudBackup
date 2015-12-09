@@ -37,7 +37,9 @@ MainWindow::MainWindow(QMainWindow* parent):QMainWindow(parent)
     projectMenu = new QListWidget;
     projectMenu->setIconSize(QSize(25,25));
     projectMenu->setFrameShape(QListWidget::NoFrame);
-    projectMenu->setStyleSheet("background: #F0FFF0 ");//F6FAFD F0FFF0
+ //   projectMenu->setStyleSheet("QListWidget{background: #F0FFF0;}\ QListWidget::item:selected:{background:red;} ");//F6FAFD F0FFF0
+    
+        projectMenu->setStyleSheet("QListWidget::item:{background:#F0FFF0;color:red} ");
     projectMenu->setFocusPolicy(Qt::NoFocus); //去掉鼠标选中的虚线框
 
     QListWidgetItem   *item1 = new QListWidgetItem(QIcon(":/image/file.png"),tr("我的文件"));

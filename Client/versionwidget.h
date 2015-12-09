@@ -15,6 +15,8 @@
 #include<QWidget>
 #include<QString>
 
+#include"myinclude.h"
+
 class VersionWidget : public QListWidget
 {
     Q_OBJECT
@@ -24,6 +26,8 @@ public:
 public:
     //添加条目
     void AddListItem(QString,QString,QString);
+public slots:
+    void VersionAlterSlot(string,string,string);
 };
 
 class VersionItemWidget : public QWidget

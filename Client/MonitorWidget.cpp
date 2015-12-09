@@ -66,6 +66,7 @@ MonitorWidget::MonitorWidget(QTabWidget* parent):QTabWidget(parent)
     connect(addMonitorButton,SIGNAL(clicked()),this,SLOT(ShowAddMonitorSlot()));
  //   widget2 = new QWidget;
     widget3 = new VersionWidget;
+    connect(&fnotify,SIGNAL(VersionAlterSig(string,string,string)),widget3,SLOT(VersionAlterSlot(string,string,string)));
 
     addTab(widget1,tr("监控列表"));
     addTab(addMonitorButton,tr("添加监控"));
@@ -76,8 +77,17 @@ MonitorWidget::MonitorWidget(QTabWidget* parent):QTabWidget(parent)
 void MonitorWidget::ShowAddMonitorSlot()
 {
     AddMonitorWidget*      w = new AddMonitorWidget;
+    connect(w,SIGNAL(AddMonitorItemSig(string,InotifyFilter)),this,SLOT(AddMonitorItemSlot(string,InotifyFilter)));
     w->resize(800,600);
     w->show();
+}
+
+//添加监控项槽
+void MonitorWidget::AddMonitorItemSlot(string name,InotifyFilter filter)
+{
+    widget1->SetSelectedFile(QString::fromStdString(name));
+    widget1->AddListItem(QString::fromStdString(filter.idate));
+    fnotify.InotifyListAdd(name,filter);
 }
 
 //开始或暂停监控

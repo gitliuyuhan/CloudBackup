@@ -160,35 +160,72 @@ void AddMonitorWidget::okSlot()
     for(it = fileSet.begin();it != fileSet.end();it++)
     {
         cout<<*it<<endl;
+        //文件名
         out<<*it<<" ";
+
         if(startdate->text() == "")
+        {
             out<<"null"<<" ";
+            filter.startdate = "null";
+        }
         else
+        {
             out<<(startdate->text()).toStdString()<<" ";
+            filter.startdate = (startdate->text()).toStdString();
+        }
         if(enddate->text() == "")
+        {
             out<<"null"<<" ";
+            filter.enddate = "null";
+        }
         else
+        {
             out<<(enddate->text()).toStdString()<<" ";
+            filter.enddate = (enddate->text()).toStdString();
+        }
         if(suffix->text() == "")
+        {
             out<<"null"<<" ";
+            filter.suffix = "null";
+        }
         else
+        {
             out<<(suffix->text()).toStdString()<<" ";
+            filter.suffix = (suffix->text()).toStdString();
+        }
         if(startsize->text() == "")
+        {
             out<<"null"<<" ";
+            filter.startsize = "null";
+        }
         else
+        {
             out<<(startsize->text()).toStdString()<<" ";
+            filter.startsize = (startsize->text()).toStdString();
+        }
         if(endsize->text() == "")
+        {
             out<<"null"<<" ";
+            filter.endsize = "null";
+        }
         else
+        {
             out<<(endsize->text()).toStdString()<<" ";
+            filter.endsize = (endsize->text()).toStdString();
+        }
         out<<folderCBox->isChecked()<<" ";
+        filter.isfolder = folderCBox->isChecked();
         out<<fileCBox->isChecked()<<" ";
+        filter.isfile = fileCBox->isChecked();
 
         out<<stime.toStdString()<<"\n";
+        filter.idate = stime.toStdString();
 
         //拷贝监控文件的副本
         string  command = "cp -r " + (*it) + "  ./etc/lyh" + getRoadFolder(*it);
         system(command.c_str()); 
+
+        emit(AddMonitorItemSig(*it,filter));
     }
     out.close();
 

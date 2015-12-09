@@ -11,7 +11,7 @@
 
 #define LEN  (10 * (sizeof(struct inotify_event) + NAME_MAX + 1))
 
-FInotify :: FInotify()
+FInotify :: FInotify(QObject* parent) : QObject(parent)
 {
     inotifyFd = inotify_init(); 
     if(inotifyFd == -1)
@@ -91,6 +91,7 @@ void FInotify::InotifyEvent(struct inotify_event*  i)
     sprintf(nowtime,"%ld",t);
     
     int   ret; 
+    string  type,dsc,dst;
 
     if( (i->mask & IN_MODIFY) && (i->len > 0 ) )
     {
@@ -99,7 +100,14 @@ void FInotify::InotifyEvent(struct inotify_event*  i)
         ret = system(command.c_str());
         command = "cp " + file + " " + oldfile;
         ret = system(command.c_str());
-        out<<"modify "<<file<<" "<<nowtime<<endl;
+
+        type = "modify";
+        dsc = file;
+        dst = nowtime;
+        out<<type<<" "<<dsc<<" "<<dst<<endl;
+        emit(VersionAlterSig(type,dsc,dst));
+
+//        out<<"modify "<<file<<" "<<nowtime<<endl;
     }
 
     if((i->mask & IN_CREATE) && (i->len > 0 ))
@@ -110,7 +118,14 @@ void FInotify::InotifyEvent(struct inotify_event*  i)
             cout<<"创建文件："<<file<<endl;
         command = "cp " + file + " " + oldfile;
         ret = system(command.c_str());
-        out<<"add "<<it->second<<" "<<file<<endl;
+
+        type = "add";
+        dsc = it->second;
+        dst = file;
+        out<<type<<" "<<dsc<<" "<<dst<<endl;
+        emit(VersionAlterSig(type,dsc,dst));
+
+//        out<<"add "<<it->second<<" "<<file<<endl;
     }
     if((i->mask & IN_DELETE) && (i->len > 0))
     {
@@ -120,7 +135,14 @@ void FInotify::InotifyEvent(struct inotify_event*  i)
             cout<<"删除文件："<<file<<endl;
         command = "mv " + oldfile + " " + "./etc/lyh/recycle/" + nowtime;
         ret = system(command.c_str());
-        out<<"delete "<<file<<" "<<nowtime<<endl;           
+
+        type = "delete";
+        dsc = file;
+        dst = nowtime;
+        out<<type<<" "<<dsc<<" "<<dst<<endl;
+        emit(VersionAlterSig(type,dsc,dst));
+
+//        out<<"delete "<<file<<" "<<nowtime<<endl;           
     }
     out.close();
 }

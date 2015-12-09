@@ -9,6 +9,8 @@
 #ifndef ADDMONITORWIDGET_H
 #define ADDMONITORWIDGET_H
 
+#include"finotify.h"
+
 #include<QWidget>
 #include<QListWidget>
 #include<QListWidgetItem>
@@ -36,6 +38,8 @@ private slots:
         void ShowFolderSlot(QListWidgetItem*);
         void SaveSlot(int,QString);
         void okSlot();
+signals:
+        void AddMonitorItemSig(string,InotifyFilter);
         
 private:
         void ShowFolder(string);        
@@ -60,6 +64,8 @@ private:
         QListWidget*     listwidget;
 
         set<string>      fileSet;
+        //过滤信息
+        InotifyFilter    filter;            
 };
 
 class  FileItem : public  QWidget

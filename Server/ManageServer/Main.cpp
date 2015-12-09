@@ -31,8 +31,8 @@
 //#define MaxClientConnection 2
 #define MAXUSERS            1000
 
-std::string       WorkIp = "127.0.0.1";
-std::string       WorkPort = "10000";
+std::string       WorkIp = "192.168.20.227";
+std::string       WorkPort = "10001";
 MyDataBase        DataBase;        //数据库
 
 template<typename T>

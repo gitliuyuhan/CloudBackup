@@ -302,7 +302,9 @@ class Mission{
             std::cout<<buf<<std::endl;
             switch (status)
             {
-                case 0:Banlance(root, socketfd);break;
+                case 0:
+                    std::cout<<"Banlance"<<std::endl;
+                    Banlance(root, socketfd);break;
                 case 1:AccountPasswd(root , socketfd);break;
                 case 2:Regiester(root , socketfd);break;
                 case 3:DirFiles(root , socketfd);break;

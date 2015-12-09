@@ -28,6 +28,7 @@ private slots:
     //开始或暂停监控
     void StartMonitorSlot(QString,int);
     void ShowAddMonitorSlot();
+    void AddMonitorItemSlot(string,InotifyFilter);
 private:
     MoniFileWidget*   widget1;
     FInotify          fnotify;

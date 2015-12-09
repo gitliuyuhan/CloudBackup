@@ -69,15 +69,22 @@ VersionWidget::VersionWidget(QListWidget* parent):QListWidget(parent)
     ifstream    in("./etc/lyh/alter.txt");
     while(!in.eof())
     {
+        in>>type;
         if(in.fail())
             break;
-        in>>type;
+ //       in>>type;
         in>>dsc;
         in>>dst;
 
         AddListItem(QString::fromStdString(type),QString::fromStdString(dsc),QString::fromStdString(dst));
     }
     in.close();
+}
+
+//添加变更项目槽函数
+void VersionWidget::VersionAlterSlot(string type,string dsc,string dst)
+{
+    AddListItem(QString::fromStdString(type),QString::fromStdString(dsc),QString::fromStdString(dst));
 }
 
 void VersionWidget::AddListItem(QString type,QString dsc,QString dst)

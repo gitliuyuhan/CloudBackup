@@ -9,6 +9,8 @@
 #ifndef FINOTIFY_H
 #define FINOTIFY_H
 
+#include<QApplication>
+
 #include<sys/inotify.h>
 #include<limits.h>
 
@@ -26,11 +28,12 @@ typedef struct InotifyFilter
     string      idate;         //文件日期
 }InotifyFilter;
 
-class FInotify
+class FInotify : public QObject
 {
+    Q_OBJECT
 public:
     //初始化inotify
-    FInotify();
+    FInotify(QObject* parent = 0);
     //添加待监控列表
     void InotifyListAdd(string,InotifyFilter);
     //从监控列表移除
@@ -45,6 +48,8 @@ public:
     static void* InotifyThread(void*);
     //监控事件处理
     void InotifyEvent(struct inotify_event*);
+signals:
+    void VersionAlterSig(string,string,string);
 private:
     int                          inotifyFd;       //文件描述符
     map<string,InotifyFilter>    inotifyList;     //监控列表
