@@ -1,4 +1,4 @@
+
 add /home/lyh/Music /home/lyh/Music/test.txt
-modify /home/lyh/Music/test.txt 1449675809
-add /home/lyh/Music /home/lyh/Music/test.txt
-modify /home/lyh/Music/test.txt 1449675823
+modify /home/lyh/Music/test.txt 1449714497
+delete /home/lyh/Music/abc.txt 1449714530

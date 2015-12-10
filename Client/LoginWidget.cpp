@@ -44,10 +44,10 @@ LoginWidget :: LoginWidget(QWidget* parent):QWidget(parent)
     passwdLineEdit->setStyleSheet("min-height: 27;");
     passwdLineEdit->setEchoMode(QLineEdit::Password);
     applyPushButton = new QPushButton(tr("注册帐号"));
-    applyPushButton->setStyleSheet("max-width: 58;");
+    applyPushButton->setStyleSheet("max-width: 70;");
     applyPushButton->setFlat(true);
     modpwdPushButton = new QPushButton(tr("忘记密码"));
-    modpwdPushButton->setStyleSheet("max-width: 58;");
+    modpwdPushButton->setStyleSheet("max-width: 70;");
     modpwdPushButton->setFlat(true);
     rempwdCheckBox = new QCheckBox(tr("记住密码"));
     autolgCheckBox = new QCheckBox(tr("自动登录"));
